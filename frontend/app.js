@@ -717,14 +717,14 @@ async function refreshSegmentDetails(roadId) {
             }
         });
         
-        // 2. Fetch the latest raw speed buffer to compute the current speed index
+        // 2. Use the 15-min prediction as the current speed display value
+        //    This matches exactly what the map polyline and road list badge show.
         let currentSpeedVal = 35.0; // static default
         let confidenceScore = 0.95;
         
-        // Use predictions 15m as proxy or fetch from metrics if active
         if (forecasts[15]) {
             confidenceScore = forecasts[15].confidence_score;
-            currentSpeedVal = forecasts[15].predicted_speed * 0.95; // slightly modified to show history vs prediction difference
+            currentSpeedVal = forecasts[15].predicted_speed; // exact same value as map & road list
         }
         
         // Update raw telemetry labels
