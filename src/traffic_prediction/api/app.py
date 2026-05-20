@@ -705,7 +705,8 @@ class AppState:
                 artifact = Path(active.artifact_path)
                 if not artifact.exists():
                     # Fallback for cross-platform absolute path differences (e.g. Windows paths on Linux Render)
-                    fallback = self.config.paths.models_dir / artifact.name
+                    from pathlib import PureWindowsPath
+                    fallback = self.config.paths.models_dir / PureWindowsPath(active.artifact_path).name
                     if fallback.exists():
                         artifact = fallback
                 self.model_version = active.model_version

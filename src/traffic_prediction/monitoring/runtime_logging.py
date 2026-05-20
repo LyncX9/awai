@@ -7,6 +7,7 @@ from dataclasses import asdict, dataclass, is_dataclass
 from datetime import date, datetime, timedelta
 from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
+import sys
 from typing import Any
 
 
@@ -146,6 +147,13 @@ def configure_structured_logging(
     handler.setLevel(_logging_level(level))
     handler._awai_runtime_handler = True
     logger.addHandler(handler)
+
+    stream_handler = logging.StreamHandler(sys.stdout)
+    stream_handler.setFormatter(JsonLogFormatter())
+    stream_handler.setLevel(_logging_level(level))
+    stream_handler._awai_runtime_handler = True
+    logger.addHandler(stream_handler)
+
     return logger
 
 
