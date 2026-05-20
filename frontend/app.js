@@ -65,6 +65,7 @@ const docElements = {
     segmentConfidenceBar: document.getElementById('segment-confidence-bar'),
     segmentWeight: document.getElementById('segment-weight'),
     segmentLastUpdate: document.getElementById('segment-last-update'),
+    speedRing: document.getElementById('speed-ring'),
     
     // Predictions Summary list
     pred15m: document.getElementById('pred-15m'),
