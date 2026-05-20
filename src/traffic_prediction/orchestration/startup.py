@@ -65,6 +65,7 @@ def build_startup_report(
             ready=buffer_available,
             status="available" if buffer_available else "empty",
             detail=_buffer_detail(buffer_available, buffer_restore_error),
+            critical=False,
         ),
         StartupResourceStatus(
             name="tomtom",
