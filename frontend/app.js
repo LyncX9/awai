@@ -923,7 +923,7 @@ async function checkSystemStatus() {
         // Populate API readiness list card dynamically
         let rHTML = '';
         Object.entries(data.resources).forEach(([key, val]) => {
-            const statusIcon = val.status === 'available' || val.available === true || val.healthy === true 
+            const statusIcon = val.ready === true || val.status === 'available' || val.status === 'loaded' || val.status === 'configured' || val.available === true || val.healthy === true 
                 ? '<span style="color: var(--color-green); display: flex; align-items: center; gap: 0.35rem;"><i data-lucide="check-circle2" style="width: 14px; height: 14px;"></i> Available</span>'
                 : '<span style="color: var(--color-red); display: flex; align-items: center; gap: 0.35rem;"><i data-lucide="x-circle" style="width: 14px; height: 14px;"></i> Unavailable</span>';
             
