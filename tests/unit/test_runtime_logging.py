@@ -85,7 +85,8 @@ def test_scheduler_writes_structured_job_events() -> None:
 
     result = scheduler.trigger("demo_job")
 
-    today_str = datetime.now().strftime("%Y%m%d")
+    from datetime import timezone
+    today_str = datetime.now(timezone.utc).strftime("%Y%m%d")
     payload = json.loads((scratch / f"scheduler-{today_str}.jsonl").read_text(encoding="utf-8").splitlines()[0])
     assert result.status == "completed"
     assert payload["event_name"] == "job_run"
