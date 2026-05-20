@@ -10,6 +10,17 @@ let API_URL = localStorage.getItem('AWAI_API_URL') || (
         : 'https://awai-backend.onrender.com'
 );
 
+let API_KEY = localStorage.getItem('AWAI_API_KEY') || 'awai_api_key_rev2026';
+
+// Helper to make authenticated fetch calls to the backend
+async function fetchWithAuth(url, options = {}) {
+    const headers = options.headers || {};
+    if (API_KEY) {
+        headers['x-api-key'] = API_KEY;
+    }
+    return fetch(url, { ...options, headers });
+}
+
 let map = null;
 let roadsData = [];
 let polylines = {};
@@ -202,16 +213,23 @@ function injectApiUrlSettingCard() {
     
     card.innerHTML = `
         <div class="card-header">
-            <h3><i data-lucide="settings"></i> Render API Endpoint Configuration</h3>
+            <h3><i data-lucide="settings"></i> Render API Configuration</h3>
         </div>
-        <div style="padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
-            <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4;">
-                Provide the full HTTP endpoint of your Render backend API. The client communicates with this backend to fetch roads, trigger predicts, and submit manual ingestion metrics.
+        <div style="padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+            <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; margin: 0;">
+                Provide the Render backend API base URL and the API Secret Key to securely authenticate requests.
             </p>
-            <div style="display: flex; gap: 0.75rem; align-items: center; width: 100%;">
-                <input type="text" id="setting-api-url" class="glass-input" style="flex-grow: 1; padding: 0.6rem 1rem; border-radius: 8px; font-size: 0.85rem;" value="${API_URL}">
-                <button id="btn-save-api-url" class="btn btn-primary" style="padding: 0.6rem 1.2rem; border-radius: 8px; font-size: 0.85rem; white-space: nowrap;">
-                    <i data-lucide="save"></i> Save Endpoint
+            <div style="display: flex; flex-direction: column; gap: 0.75rem; width: 100%;">
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                    <label for="setting-api-url" style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">API Base URL</label>
+                    <input type="text" id="setting-api-url" class="glass-input" style="padding: 0.6rem 1rem; border-radius: 8px; font-size: 0.85rem;" value="${API_URL}">
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                    <label for="setting-api-key" style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">API Secret Key (X-API-KEY)</label>
+                    <input type="password" id="setting-api-key" class="glass-input" style="padding: 0.6rem 1rem; border-radius: 8px; font-size: 0.85rem;" value="${API_KEY}">
+                </div>
+                <button id="btn-save-api-url" class="btn btn-primary" style="padding: 0.6rem 1.2rem; border-radius: 8px; font-size: 0.85rem; width: fit-content; align-self: flex-end; display: flex; align-items: center; gap: 0.35rem;">
+                    <i data-lucide="save" style="width: 14px; height: 14px;"></i> Save Configuration
                 </button>
             </div>
             <span id="api-save-status" style="font-size: 0.75rem; font-weight: 600; display: none;"></span>
@@ -219,16 +237,22 @@ function injectApiUrlSettingCard() {
     `;
     
     parentContainer.appendChild(card);
+    if (window.lucide) window.lucide.createIcons();
     
     // Bind Save Action
     document.getElementById('btn-save-api-url').addEventListener('click', () => {
-        const inputVal = document.getElementById('setting-api-url').value.trim();
-        if (inputVal) {
-            API_URL = inputVal;
+        const inputUrl = document.getElementById('setting-api-url').value.trim();
+        const inputKey = document.getElementById('setting-api-key').value.trim();
+        
+        if (inputUrl) {
+            API_URL = inputUrl;
             localStorage.setItem('AWAI_API_URL', API_URL);
             
+            API_KEY = inputKey;
+            localStorage.setItem('AWAI_API_KEY', API_KEY);
+            
             const statusLabel = document.getElementById('api-save-status');
-            statusLabel.innerText = "API URL updated successfully! Re-initiating connection checks...";
+            statusLabel.innerText = "API configuration updated successfully! Re-initiating connection checks...";
             statusLabel.style.color = "var(--color-green)";
             statusLabel.style.display = "inline-block";
             
@@ -284,7 +308,7 @@ async function refreshData() {
 // Fetch Road segments
 async function fetchRoads() {
     try {
-        const res = await fetch(`${API_URL}/roads`);
+        const res = await fetchWithAuth(`${API_URL}/roads`);
         if (!res.ok) throw new Error("HTTP " + res.status);
         
         roadsData = await res.json();
@@ -375,7 +399,7 @@ async function fetchRoads() {
 // Fetch general metrics
 async function fetchGeneralMetrics() {
     try {
-        const res = await fetch(`${API_URL}/metrics`);
+        const res = await fetchWithAuth(`${API_URL}/metrics`);
         if (!res.ok) throw new Error("HTTP " + res.status);
         
         const data = await res.json();
@@ -407,7 +431,7 @@ async function refreshNetworkPredictions() {
             horizon_minutes: 15
         }));
         
-        const res = await fetch(`${API_URL}/predict/batch`, {
+        const res = await fetchWithAuth(`${API_URL}/predict/batch`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -531,7 +555,7 @@ async function refreshSegmentDetails(roadId) {
         
         // Perform concurrent fetches for all 4 forecasting horizons to maximize load speeds
         const reqs = horizons.map(h => {
-            return fetch(`${API_URL}/predict`, {
+            return fetchWithAuth(`${API_URL}/predict`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -773,7 +797,7 @@ async function handleManualIngest(e) {
             ]
         };
         
-        const res = await fetch(`${API_URL}/ingest/manual`, {
+        const res = await fetchWithAuth(`${API_URL}/ingest/manual`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -836,7 +860,7 @@ async function handleDemoNetworkIngest() {
             };
         });
         
-        const res = await fetch(`${API_URL}/ingest/manual`, {
+        const res = await fetchWithAuth(`${API_URL}/ingest/manual`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -879,7 +903,7 @@ function resetIngestButton() {
 
 async function checkSystemStatus() {
     try {
-        const res = await fetch(`${API_URL}/ready`);
+        const res = await fetchWithAuth(`${API_URL}/ready`);
         if (!res.ok) throw new Error("Ready Check degraded");
         
         const data = await res.json();
@@ -913,7 +937,7 @@ async function checkSystemStatus() {
         docElements.readyDetailsList.innerHTML = rHTML || '<p style="font-size: 0.8rem; color: var(--text-muted);">No system assets listed</p>';
         
         // Get model status
-        const mRes = await fetch(`${API_URL}/model/version`);
+        const mRes = await fetchWithAuth(`${API_URL}/model/version`);
         if (mRes.ok) {
             const mData = await mRes.json();
             docElements.activeModelName.innerText = mData.model_loaded ? mData.model_version : "No model active";
@@ -933,7 +957,7 @@ async function checkSystemStatus() {
 
 async function fetchSchedulerStatus() {
     try {
-        const res = await fetch(`${API_URL}/scheduler/status`);
+        const res = await fetchWithAuth(`${API_URL}/scheduler/status`);
         if (!res.ok) throw new Error("Scheduler offline");
         
         const data = await res.json();
@@ -966,7 +990,7 @@ async function fetchSchedulerStatus() {
 
 async function fetchSystemAudits() {
     try {
-        const res = await fetch(`${API_URL}/data-quality`);
+        const res = await fetchWithAuth(`${API_URL}/data-quality`);
         if (!res.ok) throw new Error("Data quality failed");
         
         const data = await res.json();
