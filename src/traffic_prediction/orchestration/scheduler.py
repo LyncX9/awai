@@ -3,8 +3,10 @@ from __future__ import annotations
 import threading
 import time
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Protocol
+
+UTC = timezone.utc
 
 
 JobAction = Callable[[], Any]

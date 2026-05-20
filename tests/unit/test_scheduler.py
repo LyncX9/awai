@@ -1,6 +1,6 @@
-from __future__ import annotations
+from datetime import datetime, timedelta, timezone
 
-from datetime import UTC, datetime, timedelta
+UTC = timezone.utc
 
 from traffic_prediction.orchestration.scheduler import InProcessScheduler
 

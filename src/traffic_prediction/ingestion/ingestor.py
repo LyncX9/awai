@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Callable, Protocol
+
+UTC = timezone.utc
 from zoneinfo import ZoneInfo
 
 from traffic_prediction.data.schemas import DataQualityReport, LiveTrafficRecord

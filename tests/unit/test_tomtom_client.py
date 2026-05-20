@@ -1,6 +1,6 @@
-from __future__ import annotations
+from datetime import timezone
 
-from datetime import UTC
+UTC = timezone.utc
 
 from traffic_prediction.config.settings import load_config
 from traffic_prediction.ingestion.tomtom_client import (

@@ -3,11 +3,13 @@ from __future__ import annotations
 import json
 import pickle
 from dataclasses import asdict, dataclass, is_dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 import joblib
+
+UTC = timezone.utc
 
 from traffic_prediction.config.settings import PathConfig
 from traffic_prediction.data.schemas import FeatureManifest
