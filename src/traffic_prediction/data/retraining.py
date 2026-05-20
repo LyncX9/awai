@@ -282,9 +282,9 @@ class RetrainingDatasetManager:
         else:
             ratio = pd.Series([1.0] * len(dataset), index=dataset.index)
         levels = []
-        if (ratio >= 0.80).any():
+        if (ratio >= 0.75).any():
             levels.append("free_flow")
-        if ((ratio >= 0.50) & (ratio < 0.80)).any():
+        if ((ratio >= 0.50) & (ratio < 0.75)).any():
             levels.append("moderate")
         if (ratio < 0.50).any():
             levels.append("congested")

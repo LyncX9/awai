@@ -16,7 +16,7 @@ def classify_congestion(speed: float, free_flow_speed: float) -> str:
 
 def congestion_details(speed: float, free_flow_speed: float) -> CongestionClassification:
     ratio = max(float(speed), 0.0) / max(float(free_flow_speed), 1e-8)
-    if ratio >= 0.80:
+    if ratio >= 0.75:
         return CongestionClassification("free_flow", ratio, "Traffic speed is close to free-flow conditions.")
     if ratio >= 0.60:
         return CongestionClassification("moderate", ratio, "Traffic is slower than free flow but still moving steadily.")

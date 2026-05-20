@@ -750,7 +750,7 @@ async function refreshSegmentDetails(roadId) {
             segmentCong = 'congested';
             segmentText = speedRatio < 0.40 ? 'Severe Flow' : 'Congested';
             ringColor = 'var(--color-red)';
-        } else if (speedRatio < 0.80) {
+        } else if (speedRatio < 0.75) {
             segmentCong = 'moderate';
             segmentText = 'Moderate Flow';
             ringColor = 'var(--color-amber)';
