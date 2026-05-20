@@ -703,6 +703,11 @@ class AppState:
                 active = None
             if active is not None:
                 artifact = Path(active.artifact_path)
+                if not artifact.exists():
+                    # Fallback for cross-platform absolute path differences (e.g. Windows paths on Linux Render)
+                    fallback = self.config.paths.models_dir / artifact.name
+                    if fallback.exists():
+                        artifact = fallback
                 self.model_version = active.model_version
                 self.model_artifact_path = artifact
                 self.model_loaded = artifact.exists()
