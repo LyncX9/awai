@@ -154,13 +154,18 @@
                 <!-- Main Grid Layout: Map & Dynamic Telemetry Side panel -->
                 <div class="content-layout-grid">
                     <!-- Left: Interactive Map Container -->
-                    <div class="map-container-card glass">
+                    <div class="map-container-card glass" id="map-container-card">
                         <div class="card-header">
                             <h3><i data-lucide="map"></i> Sukabumi Network Flow Map</h3>
-                            <div class="map-legend">
-                                <span class="legend-item"><span class="legend-dot green"></span> Free (>40)</span>
-                                <span class="legend-item"><span class="legend-dot amber"></span> Moderate (20-40)</span>
-                                <span class="legend-item"><span class="legend-dot red"></span> Congested (<20)</span>
+                            <div style="display: flex; align-items: center;">
+                                <div class="map-legend">
+                                    <span class="legend-item"><span class="legend-dot green"></span> Free Flow (≥80%)</span>
+                                    <span class="legend-item"><span class="legend-dot amber"></span> Moderate Flow (60-80%)</span>
+                                    <span class="legend-item"><span class="legend-dot red"></span> Congested (<60%)</span>
+                                </div>
+                                <button class="btn-fullscreen" id="btn-map-fullscreen" title="Toggle Fullscreen">
+                                    <i data-lucide="maximize-2"></i>
+                                </button>
                             </div>
                         </div>
                         <div class="map-frame">

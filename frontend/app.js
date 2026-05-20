@@ -97,7 +97,11 @@ const docElements = {
     auditStaleCount: document.getElementById('audit-stale-count'),
     auditMissingCount: document.getElementById('audit-missing-count'),
     auditDriftStatus: document.getElementById('audit-drift-status'),
-    qualityDonut: document.getElementById('quality-donut')
+    qualityDonut: document.getElementById('quality-donut'),
+    
+    // Fullscreen Map elements
+    mapContainerCard: document.getElementById('map-container-card'),
+    btnMapFullscreen: document.getElementById('btn-map-fullscreen')
 };
 
 // Initialize Application
@@ -107,6 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 2. Initialize Leaflet Map
     initMap();
+    initMapFullscreen();
     
     // 3. Start clocks & status loops
     startClock();
@@ -188,10 +193,7 @@ function startClock() {
         let mins = wibTime.getMinutes().toString().padStart(2, '0');
         let secs = wibTime.getSeconds().toString().padStart(2, '0');
         
-        docElements.currentTimeWib.innerHTML = `<i data-lucide="clock"></i> <span>${hrs}:${mins}:${secs} WIB</span>`;
-        if (window.lucide) {
-            window.lucide.createIcons();
-        }
+        docElements.currentTimeWib.textContent = `${hrs}:${mins}:${secs} WIB`;
     };
     updateWibClock();
     setInterval(updateWibClock, 1000);
@@ -214,6 +216,45 @@ function initMap() {
     L.control.zoom({
         position: 'bottomright'
     }).addTo(map);
+}
+
+// Toggle Fullscreen Map
+function initMapFullscreen() {
+    const btn = docElements.btnMapFullscreen;
+    const container = docElements.mapContainerCard;
+    
+    if (!btn || !container) return;
+    
+    const toggleFullscreen = () => {
+        const isFullscreen = container.classList.toggle('is-fullscreen');
+        
+        // Update Lucide Icon
+        btn.innerHTML = isFullscreen 
+            ? '<i data-lucide="minimize-2"></i>' 
+            : '<i data-lucide="maximize-2"></i>';
+        
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
+        
+        // Dynamic resizing for Leaflet
+        if (map) {
+            map.invalidateSize();
+            // Invalidate size again after a brief timeout to let CSS transitions complete perfectly
+            setTimeout(() => {
+                map.invalidateSize();
+            }, 150);
+        }
+    };
+    
+    btn.addEventListener('click', toggleFullscreen);
+    
+    // Add escape key handler to exit fullscreen
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && container.classList.contains('is-fullscreen')) {
+            toggleFullscreen();
+        }
+    });
 }
 
 // Dynamic API URL settings injection
@@ -518,17 +559,19 @@ async function refreshNetworkPredictions() {
             const speed = pred.predicted_speed;
             const poly = polylines[roadId];
             
-            // Traffic Congestion Thresholds
+            // Traffic Congestion Levels (using backend classification)
+            const cong = pred.congestion_level || 'free_flow';
             let strokeColor = 'var(--color-green)';
             let dotClass = 'green';
-            if (speed < 20.0) {
+            if (cong === 'congested' || cong === 'severe') {
                 strokeColor = 'var(--color-red)';
                 dotClass = 'red';
                 if (poly) activeCongestedCount++;
-            } else if (speed <= 40.0) {
+            } else if (cong === 'moderate') {
                 strokeColor = 'var(--color-amber)';
                 dotClass = 'amber';
             }
+
 
             if (poly) {
                 totalSpeed += speed;
@@ -693,23 +736,36 @@ async function refreshSegmentDetails(roadId) {
         
         docElements.segmentLastUpdate.innerText = "Just updated";
         
+        // Find current road metadata to get its free flow speed
+        const currentRoadObj = roadsData.find(r => r.road_id === roadId);
+        const freeFlowSpeed = currentRoadObj ? (currentRoadObj.free_flow_speed || 35.0) : 35.0;
+        
+        // Calculate congestion dynamically based on ratio of current speed to free flow speed
+        const speedRatio = currentSpeedVal / freeFlowSpeed;
+        let segmentCong = 'free';
+        let segmentText = 'Free Flow';
+        let ringColor = 'var(--color-green)';
+        
+        if (speedRatio < 0.60) {
+            segmentCong = 'congested';
+            segmentText = speedRatio < 0.40 ? 'Severe Flow' : 'Congested';
+            ringColor = 'var(--color-red)';
+        } else if (speedRatio < 0.80) {
+            segmentCong = 'moderate';
+            segmentText = 'Moderate Flow';
+            ringColor = 'var(--color-amber)';
+        }
+        
         // Set congestion badge states
         const badge = docElements.segmentCongestion;
         badge.className = "congestion-badge"; // reset
-        if (currentSpeedVal < 20.0) {
-            badge.classList.add('congested');
-            badge.innerText = "Congested";
-        } else if (currentSpeedVal <= 40.0) {
-            badge.classList.add('moderate');
-            badge.innerText = "Moderate Flow";
-        } else {
-            badge.classList.add('free');
-            badge.innerText = "Free Flow";
-        }
+        badge.classList.add(segmentCong);
+        badge.innerText = segmentText;
         
         // Setup ring color based on congestion
         const ring = docElements.speedRing;
-        ring.style.borderTopColor = currentSpeedVal < 20 ? 'var(--color-red)' : (currentSpeedVal <= 40 ? 'var(--color-amber)' : 'var(--color-green)');
+        ring.style.borderTopColor = ringColor;
+
         
         // 3. Render prediction charts & grids
         const yPredList = [];

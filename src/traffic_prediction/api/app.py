@@ -1306,9 +1306,11 @@ def register_routes(app: FastAPI) -> None:
             "end_lon",
             "mid_lat",
             "mid_lon",
+            "free_flow_speed",
         ]
         available = [column for column in columns if column in state.roads.columns]
         return [RoadResponse(**record) for record in state.roads[available].to_dict("records")]
+
 
 
     @app.post("/predict", response_model=PredictionResponse)

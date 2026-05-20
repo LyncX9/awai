@@ -88,6 +88,8 @@ class RoadResponse(BaseModel):
     end_lon: float | None = None
     mid_lat: float | None = None
     mid_lon: float | None = None
+    free_flow_speed: float | None = None
+
 
 
 
