@@ -1138,6 +1138,8 @@ def _reject_oversized_request(request: Request, max_request_bytes: int) -> JSONR
 
 
 def _reject_unauthorized_request(request: Request, api_key: str | None) -> JSONResponse | None:
+    if request.method == "OPTIONS":
+        return None
     if not api_key or _is_public_path(request.url.path):
         return None
 
