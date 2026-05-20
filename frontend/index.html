@@ -19,11 +19,13 @@
     <!-- Chart.js for High-Fidelity Predictions -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
+    <script src="app.js?v=1.1.0" defer></script>
+    
     <!-- Lucide Icons CDN -->
     <script src="https://unpkg.com/lucide@latest"></script>
     
     <!-- Custom Style Sheet -->
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=1.1.0">
 </head>
 <body>
     <div class="app-container">
@@ -166,23 +168,45 @@
                         </div>
                     </div>
                     
-                    <!-- Right: Dynamic Segment Panel & Forecast Chart -->
+                    <!-- Right: Road List + Telemetry Panel -->
                     <div class="telemetry-panel glass" id="telemetry-detail-panel">
-                        <!-- Default placeholder state -->
-                        <div class="empty-state-telemetry" id="telemetry-empty-state">
-                            <i data-lucide="mouse-pointer-click" class="bounce-icon"></i>
-                            <h4>No Segment Selected</h4>
-                            <p>Click on any road polyline on the map to view real-time telemetry, model outputs, and 60-minute forecasts.</p>
+
+                        <!-- ROAD LIST STATE -->
+                        <div class="road-list-panel" id="road-list-panel">
+                            <div class="road-list-header">
+                                <h4><i data-lucide="list"></i> Road Segments</h4>
+                                <span class="road-count-badge" id="road-count-badge">50 roads</span>
+                            </div>
+                            <div class="road-search-wrap">
+                                <i data-lucide="search" class="road-search-icon"></i>
+                                <input
+                                    type="text"
+                                    id="road-search-input"
+                                    class="road-search-input"
+                                    placeholder="Cari nama jalan..."
+                                    autocomplete="off"
+                                />
+                            </div>
+                            <div class="road-list-scroll" id="road-list-scroll">
+                                <div class="road-list-loading">
+                                    <i data-lucide="loader-circle" class="spin-icon"></i>
+                                    <span>Memuat data jalan...</span>
+                                </div>
+                            </div>
                         </div>
                         
                         <!-- Telemetry content (initially hidden) -->
                         <div class="telemetry-content hidden" id="telemetry-active-state">
                             <div class="segment-meta-header">
-                                <div>
-                                    <h3 id="segment-name">Jl. Jenderal Achmad Yani</h3>
-                                    <span class="segment-id-badge" id="segment-id">SBM_JAY_01</span>
-                                </div>
+                                <button class="back-to-list-btn" id="btn-back-to-list">
+                                    <i data-lucide="arrow-left"></i>
+                                    <span>Semua Jalan</span>
+                                </button>
                                 <span class="congestion-badge free" id="segment-congestion">Free Flow</span>
+                            </div>
+                            <div class="segment-name-row">
+                                <h3 id="segment-name">Jl. Jenderal Achmad Yani</h3>
+                                <span class="segment-id-badge" id="segment-id">SBM_JAY_01</span>
                             </div>
                             
                             <!-- Speed and Confidence row -->
@@ -376,7 +400,5 @@
         </main>
     </div>
     
-    <!-- Script code -->
-    <script src="app.js"></script>
 </body>
 </html>

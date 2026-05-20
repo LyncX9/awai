@@ -55,8 +55,13 @@ const docElements = {
     txtPredCache: document.getElementById('txt-pred-cache'),
     
     // Sidebar Detail Panel
-    telemetryEmptyState: document.getElementById('telemetry-empty-state'),
+    telemetryEmptyState: document.getElementById('road-list-panel'),
     telemetryActiveState: document.getElementById('telemetry-active-state'),
+    roadListPanel: document.getElementById('road-list-panel'),
+    roadListScroll: document.getElementById('road-list-scroll'),
+    roadSearchInput: document.getElementById('road-search-input'),
+    roadCountBadge: document.getElementById('road-count-badge'),
+    btnBackToList: document.getElementById('btn-back-to-list'),
     segmentName: document.getElementById('segment-name'),
     segmentId: document.getElementById('segment-id'),
     segmentCongestion: document.getElementById('segment-congestion'),
@@ -114,6 +119,18 @@ document.addEventListener('DOMContentLoaded', () => {
     docElements.btnRefreshData.addEventListener('click', refreshData);
     docElements.formManualIngest.addEventListener('submit', handleManualIngest);
     docElements.btnDemoIngest.addEventListener('click', handleDemoNetworkIngest);
+
+    // Road list back button
+    if (docElements.btnBackToList) {
+        docElements.btnBackToList.addEventListener('click', showRoadList);
+    }
+
+    // Road list search filter
+    if (docElements.roadSearchInput) {
+        docElements.roadSearchInput.addEventListener('input', (e) => {
+            filterRoadList(e.target.value.trim().toLowerCase());
+        });
+    }
     
     // Set periodic refresh timers
     statusInterval = setInterval(checkSystemStatus, 10000); // 10s health checks
@@ -332,7 +349,6 @@ async function fetchRoads() {
             docElements.ingestRoadId.appendChild(opt);
             
             // Build polyline coordinates
-            // Fallbacks for geometry data
             const startLat = road.start_lat || -6.915;
             const startLon = road.start_lon || 106.85;
             const endLat = road.end_lat || -6.915;
@@ -346,7 +362,7 @@ async function fetchRoads() {
             mapBounds.push([startLat, startLon]);
             mapBounds.push([endLat, endLon]);
             
-            // Base polyline (grey until populated by predict endpoint)
+            // Base polyline
             const poly = L.polyline(coords, {
                 color: 'var(--text-muted)',
                 weight: 5,
@@ -354,28 +370,13 @@ async function fetchRoads() {
                 smoothFactor: 1.0
             }).addTo(map);
             
-            // Interactivity
-            poly.on('mouseover', () => {
-                poly.setStyle({
-                    weight: 8,
-                    opacity: 0.95
-                });
-            });
+            poly.on('mouseover', () => poly.setStyle({ weight: 8, opacity: 0.95 }));
+            poly.on('mouseout', () => poly.setStyle({
+                weight: selectedRoadId === road.road_id ? 8 : 5,
+                opacity: selectedRoadId === road.road_id ? 0.95 : 0.6
+            }));
+            poly.on('click', () => selectSegment(road.road_id));
             
-            poly.on('mouseout', () => {
-                // Revert to computed color
-                const color = poly.options.color;
-                poly.setStyle({
-                    weight: selectedRoadId === road.road_id ? 8 : 5,
-                    opacity: selectedRoadId === road.road_id ? 0.95 : 0.6
-                });
-            });
-            
-            poly.on('click', () => {
-                selectSegment(road.road_id);
-            });
-            
-            // Add custom popup showing segment identity
             poly.bindTooltip(`${road.road_name || 'Unnamed Segment'} (${road.road_id})`, {
                 sticky: true,
                 className: 'custom-tooltip'
@@ -386,14 +387,78 @@ async function fetchRoads() {
         
         // Auto zoom bounds dynamically
         if (mapBounds.length > 0) {
-            map.fitBounds(L.latLngBounds(mapBounds), {
-                padding: [30, 30]
-            });
+            map.fitBounds(L.latLngBounds(mapBounds), { padding: [30, 30] });
         }
+        
+        // Populate road list sidebar
+        populateRoadList(roadsData);
         
         if (window.lucide) window.lucide.createIcons();
     } catch (err) {
         console.error("Failed to load road segments:", err);
+    }
+}
+
+// Populate the sidebar road list from roadsData
+function populateRoadList(roads) {
+    if (!docElements.roadListScroll) return;
+
+    docElements.roadListScroll.innerHTML = '';
+
+    if (docElements.roadCountBadge) {
+        docElements.roadCountBadge.textContent = `${roads.length} jalan`;
+    }
+
+    roads.forEach(road => {
+        const item = document.createElement('div');
+        item.className = 'road-list-item';
+        item.dataset.roadId = road.road_id;
+        item.dataset.roadName = (road.road_name || '').toLowerCase();
+        item.innerHTML = `
+            <div class="road-item-dot" id="dot-${road.road_id}"></div>
+            <div class="road-item-info">
+                <div class="road-item-name">${road.road_name || road.road_id}</div>
+                <div class="road-item-id">${road.road_id}</div>
+            </div>
+            <div class="road-item-speed" id="speed-badge-${road.road_id}">
+                <span>--</span>
+                <span class="speed-unit-small">km/h</span>
+            </div>
+            <div class="road-item-chevron"><i data-lucide="chevron-right"></i></div>
+        `;
+        item.addEventListener('click', () => selectSegment(road.road_id));
+        docElements.roadListScroll.appendChild(item);
+    });
+
+    if (window.lucide) window.lucide.createIcons();
+}
+
+// Filter list items by search query
+function filterRoadList(query) {
+    if (!docElements.roadListScroll) return;
+    const items = docElements.roadListScroll.querySelectorAll('.road-list-item');
+    let visibleCount = 0;
+
+    items.forEach(item => {
+        const name = item.dataset.roadName || '';
+        const id   = (item.dataset.roadId || '').toLowerCase();
+        const match = !query || name.includes(query) || id.includes(query);
+        item.style.display = match ? '' : 'none';
+        if (match) visibleCount++;
+    });
+
+    // Show/hide empty state
+    let emptyEl = docElements.roadListScroll.querySelector('.road-list-empty');
+    if (visibleCount === 0) {
+        if (!emptyEl) {
+            emptyEl = document.createElement('div');
+            emptyEl.className = 'road-list-empty';
+            emptyEl.innerHTML = `<i data-lucide="search-x"></i><p>Jalan "${query}" tidak ditemukan</p>`;
+            docElements.roadListScroll.appendChild(emptyEl);
+            if (window.lucide) window.lucide.createIcons();
+        }
+    } else {
+        if (emptyEl) emptyEl.remove();
     }
 }
 
@@ -453,31 +518,24 @@ async function refreshNetworkPredictions() {
             const speed = pred.predicted_speed;
             const poly = polylines[roadId];
             
+            // Traffic Congestion Thresholds
+            let strokeColor = 'var(--color-green)';
+            let dotClass = 'green';
+            if (speed < 20.0) {
+                strokeColor = 'var(--color-red)';
+                dotClass = 'red';
+                if (poly) activeCongestedCount++;
+            } else if (speed <= 40.0) {
+                strokeColor = 'var(--color-amber)';
+                dotClass = 'amber';
+            }
+
             if (poly) {
                 totalSpeed += speed;
                 successCount++;
                 
-                // Traffic Congestion Thresholds:
-                // Green (Free Flow): > 40 km/h
-                // Amber (Moderate): 20 - 40 km/h
-                // Red (Congested): < 20 km/h
-                let strokeColor = 'var(--color-green)';
-                let glowShadow = 'var(--color-green-glow)';
+                poly.setStyle({ color: strokeColor });
                 
-                if (speed < 20.0) {
-                    strokeColor = 'var(--color-red)';
-                    glowShadow = 'var(--color-red-glow)';
-                    activeCongestedCount++;
-                } else if (speed <= 40.0) {
-                    strokeColor = 'var(--color-amber)';
-                    glowShadow = 'var(--color-amber-glow)';
-                }
-                
-                poly.setStyle({
-                    color: strokeColor
-                });
-                
-                // Add popups showing details
                 const roadObj = roadsData.find(r => r.road_id === roadId);
                 const roadName = roadObj ? roadObj.road_name : 'Segment';
                 poly.bindTooltip(`
@@ -489,6 +547,17 @@ async function refreshNetworkPredictions() {
                         </span>
                     </div>
                 `, { sticky: true });
+            }
+
+            // Update road list item speed badge & dot color
+            const dot = document.getElementById(`dot-${roadId}`);
+            const badge = document.getElementById(`speed-badge-${roadId}`);
+            if (dot) {
+                dot.className = `road-item-dot ${dotClass}`;
+            }
+            if (badge) {
+                badge.innerHTML = `<span>${speed.toFixed(1)}</span><span class="speed-unit-small">km/h</span>`;
+                badge.style.color = strokeColor;
             }
         });
         
@@ -513,31 +582,57 @@ async function refreshNetworkPredictions() {
 
 async function selectSegment(roadId) {
     // Reset weights of all polylines
-    Object.keys(polylines).forEach(id => {
-        polylines[id].setStyle({
-            weight: 5
-        });
-    });
+    Object.keys(polylines).forEach(id => polylines[id].setStyle({ weight: 5 }));
     
     selectedRoadId = roadId;
     
-    // Highlight selected segment
+    // Highlight selected segment on map
     if (polylines[roadId]) {
-        polylines[roadId].setStyle({
-            weight: 8
+        polylines[roadId].setStyle({ weight: 8 });
+    }
+
+    // Update active state on list items
+    if (docElements.roadListScroll) {
+        docElements.roadListScroll.querySelectorAll('.road-list-item').forEach(el => {
+            el.classList.toggle('active', el.dataset.roadId === roadId);
         });
     }
     
-    // Toggles visibility states
-    docElements.telemetryEmptyState.classList.add('hidden');
-    docElements.telemetryActiveState.classList.remove('hidden');
+    // Show telemetry, hide road list
+    if (docElements.roadListPanel)  docElements.roadListPanel.classList.add('hidden');
+    if (docElements.telemetryActiveState) docElements.telemetryActiveState.classList.remove('hidden');
     
-    // Show loading indicators inside values
+    // Show loading indicator
     docElements.segmentName.innerText = "Loading details...";
     docElements.segmentId.innerText = roadId;
     docElements.segmentCurrentSpeed.innerText = "--";
     
     await refreshSegmentDetails(roadId);
+}
+
+// Return to road list view
+function showRoadList() {
+    selectedRoadId = null;
+
+    // Deselect all polylines
+    Object.keys(polylines).forEach(id => polylines[id].setStyle({ weight: 5 }));
+
+    // Remove active highlight from list items
+    if (docElements.roadListScroll) {
+        docElements.roadListScroll.querySelectorAll('.road-list-item').forEach(el => {
+            el.classList.remove('active');
+        });
+    }
+
+    // Show road list, hide telemetry
+    if (docElements.roadListPanel)  docElements.roadListPanel.classList.remove('hidden');
+    if (docElements.telemetryActiveState) docElements.telemetryActiveState.classList.add('hidden');
+
+    // Clear search input
+    if (docElements.roadSearchInput) {
+        docElements.roadSearchInput.value = '';
+        filterRoadList('');
+    }
 }
 
 async function refreshSegmentDetails(roadId) {
