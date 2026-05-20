@@ -528,94 +528,78 @@ async function fetchGeneralMetrics() {
 }
 
 // Batch predictions to color-code the map network flow
+// Uses /roads/live for ACTUAL current speeds (accurate coloring) + /predict/batch for forecast stats
 async function refreshNetworkPredictions() {
     if (roadsData.length === 0) return;
     
     try {
-        // Construct bulk PredictionBatchRequest body for horizon: 15 minutes
-        const reqList = roadsData.map(road => ({
-            road_id: road.road_id,
-            horizon_minutes: 15
-        }));
-        
-        const res = await fetchWithAuth(`${API_URL}/predict/batch`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ predictions: reqList })
-        });
-        
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        
-        const data = await res.json();
-        
-        let totalSpeed = 0;
-        let activeCongestedCount = 0;
-        let successCount = 0;
-        
-        data.predictions.forEach(pred => {
-            const roadId = pred.road_id;
-            const speed = pred.predicted_speed;
-            const poly = polylines[roadId];
+        // ---- 1. Fetch LIVE current speeds (source of truth for map colors & badges) ----
+        const liveRes = await fetchWithAuth(`${API_URL}/roads/live`);
+        if (liveRes.ok) {
+            const liveData = await liveRes.json();
             
-            // Traffic Congestion Levels (using backend classification)
-            const cong = pred.congestion_level || 'free_flow';
-            let strokeColor = 'var(--color-green)';
-            let dotClass = 'green';
-            if (cong === 'congested' || cong === 'severe') {
-                strokeColor = 'var(--color-red)';
-                dotClass = 'red';
-                if (poly) activeCongestedCount++;
-            } else if (cong === 'moderate') {
-                strokeColor = 'var(--color-amber)';
-                dotClass = 'amber';
-            }
-
-
-            if (poly) {
-                totalSpeed += speed;
-                successCount++;
+            let totalSpeed = 0;
+            let activeCongestedCount = 0;
+            let successCount = 0;
+            
+            liveData.forEach(item => {
+                const roadId = item.road_id;
+                const speed = item.current_speed;
+                const cong = item.current_congestion_level || 'free_flow';
+                const poly = polylines[roadId];
                 
-                poly.setStyle({ color: strokeColor });
-                
+                // Color based on ACTUAL current congestion
+                let strokeColor = 'var(--color-green)';
+                let dotClass = 'green';
+                if (cong === 'congested' || cong === 'severe') {
+                    strokeColor = 'var(--color-red)';
+                    dotClass = 'red';
+                    if (poly) activeCongestedCount++;
+                } else if (cong === 'moderate') {
+                    strokeColor = 'var(--color-amber)';
+                    dotClass = 'amber';
+                }
+
                 const roadObj = roadsData.find(r => r.road_id === roadId);
                 const roadName = roadObj ? roadObj.road_name : 'Segment';
-                poly.bindTooltip(`
-                    <div class="map-tooltip-content">
-                        <strong>${roadName}</strong><br/>
-                        <span style="font-size: 0.75rem; color: var(--text-secondary)">ID: ${roadId}</span><br/>
-                        <span style="color: ${strokeColor}; font-weight: bold; font-size: 0.85rem;">
-                            Speed: ${speed.toFixed(1)} km/h (${pred.congestion_level.replace('_', ' ')})
-                        </span>
-                    </div>
-                `, { sticky: true });
-            }
+                const stallBadge = item.is_stale ? ` <span style="color: var(--color-amber)">⚠ stale</span>` : '';
+                
+                if (poly) {
+                    totalSpeed += speed;
+                    successCount++;
+                    poly.setStyle({ color: strokeColor });
+                    poly.bindTooltip(`
+                        <div class="map-tooltip-content">
+                            <strong>${roadName}</strong><br/>
+                            <span style="font-size: 0.75rem; color: var(--text-secondary)">ID: ${roadId}</span><br/>
+                            <span style="color: ${strokeColor}; font-weight: bold; font-size: 0.85rem;">
+                                Now: ${speed.toFixed(1)} km/h (${cong.replace('_', ' ')})
+                            </span>${stallBadge}
+                        </div>
+                    `, { sticky: true });
+                }
 
-            // Update road list item speed badge & dot color
-            const dot = document.getElementById(`dot-${roadId}`);
-            const badge = document.getElementById(`speed-badge-${roadId}`);
-            if (dot) {
-                dot.className = `road-item-dot ${dotClass}`;
-            }
-            if (badge) {
-                badge.innerHTML = `<span>${speed.toFixed(1)}</span><span class="speed-unit-small">km/h</span>`;
-                badge.style.color = strokeColor;
-            }
-        });
-        
-        // Update general dashboard counts
-        if (successCount > 0) {
-            const avgSpeed = (totalSpeed / successCount).toFixed(1);
-            docElements.valAvgSpeed.innerText = avgSpeed;
-            docElements.valCongestedRoads.innerText = activeCongestedCount;
+                // Update road list badge & dot color with actual current speed
+                const dot = document.getElementById(`dot-${roadId}`);
+                const badge = document.getElementById(`speed-badge-${roadId}`);
+                if (dot) dot.className = `road-item-dot ${dotClass}`;
+                if (badge) {
+                    badge.innerHTML = `<span>${speed.toFixed(1)}</span><span class="speed-unit-small">km/h</span>`;
+                    badge.style.color = strokeColor;
+                }
+            });
             
-            const pctCongested = ((activeCongestedCount / successCount) * 100).toFixed(0);
-            docElements.txtCongestedPercentage.innerText = `${pctCongested}% of 50 segments`;
+            if (successCount > 0) {
+                const avgSpeed = (totalSpeed / successCount).toFixed(1);
+                docElements.valAvgSpeed.innerText = avgSpeed;
+                docElements.valCongestedRoads.innerText = activeCongestedCount;
+                const pctCongested = ((activeCongestedCount / successCount) * 100).toFixed(0);
+                docElements.txtCongestedPercentage.innerText = `${pctCongested}% of ${successCount} segments`;
+            }
         }
         
     } catch (err) {
-        console.error("Batch predictions download failed:", err);
+        console.error("Network predictions refresh failed:", err);
     }
 }
 
@@ -688,21 +672,15 @@ async function refreshSegmentDetails(roadId) {
         docElements.segmentId.innerText = roadId;
         docElements.segmentWeight.innerText = roadObj.road_weight ? roadObj.road_weight.toFixed(2) : '1.00';
         
-        // 1. Fetch prediction data points for horizons: 15, 30, 45, 60 minutes
+        // 1. Fetch all 4 forecast horizons concurrently
         const horizons = [15, 30, 45, 60];
         const forecasts = {};
         
-        // Perform concurrent fetches for all 4 forecasting horizons to maximize load speeds
         const reqs = horizons.map(h => {
             return fetchWithAuth(`${API_URL}/predict`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    road_id: roadId,
-                    horizon_minutes: h
-                })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ road_id: roadId, horizon_minutes: h })
             }).then(async r => {
                 if (!r.ok) throw new Error("Horizon failed " + h);
                 return { horizon: h, data: await r.json() };
@@ -710,45 +688,32 @@ async function refreshSegmentDetails(roadId) {
         });
         
         const results = await Promise.allSettled(reqs);
-        
         results.forEach(res => {
             if (res.status === 'fulfilled') {
                 forecasts[res.value.horizon] = res.value.data;
             }
         });
         
-        // 2. Use the 15-min prediction as the current speed display value
-        //    This matches exactly what the map polyline and road list badge show.
-        let currentSpeedVal = 35.0; // static default
-        let confidenceScore = 0.95;
+        // 2. Derive current speed: use actual current_speed from backend (live buffer), fall back to prediction
+        const pred15 = forecasts[15];
+        let currentSpeedVal = pred15?.current_speed ?? pred15?.predicted_speed ?? 35.0;
+        let confidenceScore = pred15?.confidence_score ?? 0.95;
+        const freeFlowSpeed = pred15?.free_flow_speed ?? roadObj.free_flow_speed ?? 35.0;
+        const hasTrueCurrentSpeed = pred15?.current_speed != null;
         
-        if (forecasts[15]) {
-            confidenceScore = forecasts[15].confidence_score;
-            currentSpeedVal = forecasts[15].predicted_speed; // exact same value as map & road list
-        }
-        
-        // Update raw telemetry labels
-        docElements.segmentCurrentSpeed.innerText = currentSpeedVal.toFixed(1);
-        
-        const pctConf = (confidenceScore * 100).toFixed(0);
-        docElements.segmentConfidence.innerText = `${pctConf}%`;
-        docElements.segmentConfidenceBar.style.width = `${pctConf}%`;
-        
-        docElements.segmentLastUpdate.innerText = "Just updated";
-        
-        // Find current road metadata to get its free flow speed
-        const currentRoadObj = roadsData.find(r => r.road_id === roadId);
-        const freeFlowSpeed = currentRoadObj ? (currentRoadObj.free_flow_speed || 35.0) : 35.0;
-        
-        // Calculate congestion dynamically based on ratio of current speed to free flow speed
+        // 3. Classify based on ACTUAL current speed (not prediction)
         const speedRatio = currentSpeedVal / freeFlowSpeed;
         let segmentCong = 'free';
         let segmentText = 'Free Flow';
         let ringColor = 'var(--color-green)';
         
-        if (speedRatio < 0.60) {
+        if (speedRatio < 0.40) {
             segmentCong = 'congested';
-            segmentText = speedRatio < 0.40 ? 'Severe Flow' : 'Congested';
+            segmentText = 'Severe Congestion';
+            ringColor = 'var(--color-red)';
+        } else if (speedRatio < 0.60) {
+            segmentCong = 'congested';
+            segmentText = 'Congested';
             ringColor = 'var(--color-red)';
         } else if (speedRatio < 0.75) {
             segmentCong = 'moderate';
@@ -756,18 +721,31 @@ async function refreshSegmentDetails(roadId) {
             ringColor = 'var(--color-amber)';
         }
         
-        // Set congestion badge states
+        // 4. Update current speed ring display
+        docElements.segmentCurrentSpeed.innerText = currentSpeedVal.toFixed(1);
+        
+        // Show data source indicator under the speed value
+        const sourceLabel = document.getElementById('segment-speed-source');
+        if (sourceLabel) {
+            sourceLabel.innerText = hasTrueCurrentSpeed ? 'Live Speed' : 'Fallback Estimate';
+            sourceLabel.style.color = hasTrueCurrentSpeed ? 'var(--color-green)' : 'var(--color-amber)';
+        }
+        
+        const pctConf = (confidenceScore * 100).toFixed(0);
+        docElements.segmentConfidence.innerText = `${pctConf}%`;
+        docElements.segmentConfidenceBar.style.width = `${pctConf}%`;
+        docElements.segmentLastUpdate.innerText = hasTrueCurrentSpeed ? 'Live from TomTom' : 'Estimated';
+        
+        // 5. Set congestion badge & ring color
         const badge = docElements.segmentCongestion;
-        badge.className = "congestion-badge"; // reset
+        badge.className = 'congestion-badge';
         badge.classList.add(segmentCong);
         badge.innerText = segmentText;
         
-        // Setup ring color based on congestion
         const ring = docElements.speedRing;
         ring.style.borderTopColor = ringColor;
-
         
-        // 3. Render prediction charts & grids
+        // 6. Render prediction forecast cards & chart
         const yPredList = [];
         const yLowerList = [];
         const yUpperList = [];
@@ -783,23 +761,23 @@ async function refreshSegmentDetails(roadId) {
                 yLowerList.push(details.uncertainty_lower);
                 yUpperList.push(details.uncertainty_upper);
             } else {
-                summaryVal.innerText = "--";
+                summaryVal.innerText = '--';
                 yPredList.push(currentSpeedVal);
                 yLowerList.push(currentSpeedVal * 0.8);
                 yUpperList.push(currentSpeedVal * 1.2);
             }
         });
         
-        // Re-draw forecasting line graph
-        renderForecastChart(labelsList, yPredList, yLowerList, yUpperList);
+        // Re-draw forecast chart with current speed as baseline reference
+        renderForecastChart(labelsList, yPredList, yLowerList, yUpperList, currentSpeedVal);
         
     } catch (err) {
         console.error("Failed to load segment specifics:", err);
     }
 }
 
-// Forecast Graph in Chart.js with translucent bounds
-function renderForecastChart(labels, predictions, lowerBounds, upperBounds) {
+// Forecast Graph in Chart.js with translucent bounds + current speed reference line
+function renderForecastChart(labels, predictions, lowerBounds, upperBounds, currentSpeed) {
     const ctx = document.getElementById('forecastChart').getContext('2d');
     
     // Destroy previous Chart instance
@@ -810,16 +788,18 @@ function renderForecastChart(labels, predictions, lowerBounds, upperBounds) {
     const rootStyles = getComputedStyle(document.documentElement);
     const violetAccent = rootStyles.getPropertyValue('--violet-accent').trim() || '#8b5cf6';
     
-    forecastChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'Predicted Speed',
-                    data: predictions,
-                    borderColor: violetAccent,
-                    backgroundColor: 'rgba(139, 92, 246, 0.2)',
+    // Build current speed reference line (flat) if available
+    const currentSpeedLine = currentSpeed != null
+        ? labels.map(() => currentSpeed)
+        : null;
+    
+    const datasets = [
+        {
+            label: 'Predicted Speed',
+            data: predictions,
+            borderColor: violetAccent,
+            backgroundColor: 'rgba(139, 92, 246, 0.2)',
+
                     borderWidth: 3,
                     tension: 0.35,
                     fill: false,
@@ -844,10 +824,28 @@ function renderForecastChart(labels, predictions, lowerBounds, upperBounds) {
                     borderWidth: 1.5,
                     borderDash: [5, 5],
                     tension: 0.35,
-                    fill: '-1', // Shade the area between lower bound and upper bound dataset
+                    fill: '-1', // Shade the area between lower bound and upper bound
                     pointRadius: 0
-                }
-            ]
+                },
+                ...(currentSpeedLine ? [{
+                    label: 'Current Speed (Now)',
+                    data: currentSpeedLine,
+                    borderColor: 'rgba(52, 211, 153, 0.7)',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    borderDash: [4, 3],
+                    tension: 0,
+                    fill: false,
+                    pointRadius: 0,
+                    pointHoverRadius: 0
+                }] : [])
+            ];
+    
+    forecastChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: datasets,
         },
         options: {
             responsive: true,
@@ -912,6 +910,7 @@ function renderForecastChart(labels, predictions, lowerBounds, upperBounds) {
         }
     });
 }
+
 
 // ----------------------------------------------------
 // MANUAL TRAFFIC OBSERVATIONS INGESTION

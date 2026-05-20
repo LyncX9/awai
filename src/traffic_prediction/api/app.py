@@ -22,6 +22,7 @@ from traffic_prediction.api.schemas import (
     DataQualityResponse,
     HealthResponse,
     JobTriggerResponse,
+    LiveRoadStatusResponse,
     ManualIngestRequest,
     ManualIngestResponse,
     ModelReloadResponse,
@@ -1311,6 +1312,44 @@ def register_routes(app: FastAPI) -> None:
         available = [column for column in columns if column in state.roads.columns]
         return [RoadResponse(**record) for record in state.roads[available].to_dict("records")]
 
+    @app.get("/roads/live", response_model=list[LiveRoadStatusResponse])
+    def roads_live() -> list[LiveRoadStatusResponse]:
+        """Return the latest real-time current speed for every road from the live buffer.
+        This is the ground-truth snapshot used for accurate congestion classification.
+        """
+        state = get_app_state(app)
+        if state.roads is None or state.roads.empty:
+            return []
+        now = pd.Timestamp.now(tz=state.config.data.timezone).to_pydatetime()
+        result: list[LiveRoadStatusResponse] = []
+        for _, row in state.roads.iterrows():
+            road_id = str(row["road_id"])
+            free_flow_speed = float(row.get("free_flow_speed") or 35.0)
+            records = state.live_buffer.get_latest(road_id, n=1)
+            if not records:
+                continue
+            record = records[-1]
+            current_speed = float(record.current_speed)
+            # Classify congestion purely on current speed vs free-flow speed
+            ratio = current_speed / free_flow_speed if free_flow_speed > 0 else 1.0
+            if ratio >= 0.75:
+                current_congestion_level = "free_flow"
+            elif ratio >= 0.60:
+                current_congestion_level = "moderate"
+            elif ratio >= 0.40:
+                current_congestion_level = "congested"
+            else:
+                current_congestion_level = "severe"
+            is_stale = state.live_buffer.is_stale(road_id, now)
+            result.append(LiveRoadStatusResponse(
+                road_id=road_id,
+                current_speed=round(current_speed, 3),
+                free_flow_speed=round(free_flow_speed, 3),
+                current_congestion_level=current_congestion_level,
+                timestamp=record.timestamp,
+                is_stale=is_stale,
+            ))
+        return result
 
 
     @app.post("/predict", response_model=PredictionResponse)

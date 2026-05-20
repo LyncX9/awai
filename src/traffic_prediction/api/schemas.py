@@ -156,6 +156,11 @@ class PredictionResponse(BaseModel):
     horizon_minutes: int
     predicted_speed: float
     congestion_level: str
+    # Current real-time speed from the live buffer (latest TomTom observation)
+    current_speed: float | None = None
+    # Congestion level based on current_speed / free_flow_speed (more accurate than prediction-based)
+    current_congestion_level: str | None = None
+    free_flow_speed: float | None = None
     uncertainty_lower: float
     uncertainty_upper: float
     confidence_score: float
@@ -183,6 +188,16 @@ class PredictionBatchResponse(BaseModel):
     successful_count: int
     failed_count: int = 0
     failures: list[ErrorResponse] = Field(default_factory=list)
+
+
+class LiveRoadStatusResponse(BaseModel):
+    """Real-time current speed snapshot for a single road from the live buffer."""
+    road_id: str
+    current_speed: float
+    free_flow_speed: float | None = None
+    current_congestion_level: str
+    timestamp: datetime | None = None
+    is_stale: bool = False
 
 
 class ValidationReportResponse(BaseModel):

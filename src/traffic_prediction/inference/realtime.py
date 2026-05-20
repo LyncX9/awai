@@ -132,11 +132,17 @@ class RealtimePredictionPipeline:
             data_quality=quality_report,
         )
         degraded = feature_result.quality.status != "healthy" or getattr(quality_report, "status", None) != "healthy"
+        # Get actual current speed from live buffer for accurate real-time classification
+        current_speed = self._current_speed_from_buffer(context.request.road_id)
+        current_congestion_level = classify_congestion(current_speed, free_flow_speed) if current_speed is not None else None
         return PredictionResponse(
             road_id=context.request.road_id,
             horizon_minutes=context.request.horizon_minutes,
             predicted_speed=round(predicted_speed, 3),
             congestion_level=classify_congestion(predicted_speed, free_flow_speed),
+            current_speed=round(current_speed, 3) if current_speed is not None else None,
+            current_congestion_level=current_congestion_level,
+            free_flow_speed=round(free_flow_speed, 3),
             uncertainty_lower=round(max(0.0, predicted_speed - uncertainty_margin), 3),
             uncertainty_upper=round(min(120.0, predicted_speed + uncertainty_margin), 3),
             confidence_score=confidence.adjusted_confidence,
@@ -179,11 +185,17 @@ class RealtimePredictionPipeline:
             "online_feature_error": feature_error,
             "fallback_reason": fallback.reason if feature_error is None else feature_error,
         }
+        # Get actual current speed from live buffer for accurate real-time classification
+        current_speed = self._current_speed_from_buffer(context.request.road_id)
+        current_congestion_level = classify_congestion(current_speed, free_flow_speed) if current_speed is not None else None
         return PredictionResponse(
             road_id=context.request.road_id,
             horizon_minutes=context.request.horizon_minutes,
             predicted_speed=round(predicted_speed, 3),
             congestion_level=classify_congestion(predicted_speed, free_flow_speed),
+            current_speed=round(current_speed, 3) if current_speed is not None else None,
+            current_congestion_level=current_congestion_level,
+            free_flow_speed=round(free_flow_speed, 3),
             uncertainty_lower=round(max(0.0, predicted_speed - fallback.uncertainty_margin), 3),
             uncertainty_upper=round(min(120.0, predicted_speed + fallback.uncertainty_margin), 3),
             confidence_score=confidence.adjusted_confidence,
@@ -240,6 +252,13 @@ class RealtimePredictionPipeline:
         if not records:
             return None
         return float(np.mean([record.confidence for record in records]))
+
+    def _current_speed_from_buffer(self, road_id: str) -> float | None:
+        """Return the most recent observed current_speed from the live buffer, or None if unavailable."""
+        records = self.live_buffer.get_latest(road_id, n=1)
+        if not records:
+            return None
+        return float(records[-1].current_speed)
 
     @staticmethod
     def _free_flow_speed(road_record: dict, predicted_speed: float) -> float:
