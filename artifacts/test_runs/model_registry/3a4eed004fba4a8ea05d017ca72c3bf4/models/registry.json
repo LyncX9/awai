@@ -1,0 +1,31 @@
+{
+  "active_model_version": "offline-2",
+  "models": [
+    {
+      "model_version": "offline-1",
+      "artifact_path": "C:\\AIproject\\AWAI\\artifacts\\test_runs\\model_registry\\3a4eed004fba4a8ea05d017ca72c3bf4\\models\\offline-1",
+      "created_at": "2026-05-18T06:38:12.300707",
+      "model_type": "pretraining-artifacts",
+      "framework": "artifact-only",
+      "metrics": {},
+      "config": {},
+      "tags": [
+        "offline-pipeline"
+      ],
+      "is_active": false
+    },
+    {
+      "model_version": "offline-2",
+      "artifact_path": "C:\\AIproject\\AWAI\\artifacts\\test_runs\\model_registry\\3a4eed004fba4a8ea05d017ca72c3bf4\\models\\offline-2",
+      "created_at": "2026-05-18T06:38:12.301425",
+      "model_type": "pretraining-artifacts",
+      "framework": "artifact-only",
+      "metrics": {},
+      "config": {},
+      "tags": [
+        "offline-pipeline"
+      ],
+      "is_active": true
+    }
+  ]
+}

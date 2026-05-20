@@ -1,0 +1,28 @@
+{
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.22635149508714675,
+      "validation_loss": 0.06076296977698803,
+      "validation_mae": 0.19947867840528488,
+      "validation_rmse": 0.24650145998956685,
+      "learning_rate": 0.001
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.16627439111471176,
+      "validation_loss": 0.054706575348973274,
+      "validation_mae": 0.19056734442710876,
+      "validation_rmse": 0.23389436792914292,
+      "learning_rate": 0.001
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.2242619961500168,
+      "validation_loss": 0.050667425617575645,
+      "validation_mae": 0.18438351899385452,
+      "validation_rmse": 0.2250942594060889,
+      "learning_rate": 0.001
+    }
+  ]
+}

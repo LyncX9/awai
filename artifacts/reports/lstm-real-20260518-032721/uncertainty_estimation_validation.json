@@ -1,0 +1,64 @@
+{
+  "status": "passed",
+  "model_version": "lstm-real-20260518-032721",
+  "runner_location": "notebooks/09_uncertainty_estimation_validation.ipynb",
+  "method": "monte_carlo_dropout",
+  "mc_passes": 30,
+  "interval_z": 1.64,
+  "calibration_samples": 256,
+  "prediction_shape": [
+    256,
+    4,
+    1
+  ],
+  "mean_prediction_kmh_first_sample": [
+    25.54199981689453,
+    25.805999755859375,
+    26.04599952697754,
+    26.222999572753906
+  ],
+  "lower_bound_kmh_first_sample": [
+    22.79599952697754,
+    22.816999435424805,
+    23.375,
+    24.165000915527344
+  ],
+  "upper_bound_kmh_first_sample": [
+    28.288000106811523,
+    28.79400062561035,
+    28.718000411987305,
+    28.280000686645508
+  ],
+  "confidence_first_sample": [
+    0.9581419825553894,
+    0.9544489979743958,
+    0.9592710137367249,
+    0.9686369895935059
+  ],
+  "mean_confidence": 0.951579749584198,
+  "mean_std_kmh": 1.9368101358413696,
+  "mean_interval_width_kmh": 6.3527374267578125,
+  "mae_kmh": 1.9274461269378662,
+  "empirical_coverage": 0.869140625,
+  "horizon_coverage": [
+    0.929688,
+    0.902344,
+    0.851562,
+    0.792969
+  ],
+  "horizon_interval_width_kmh": [
+    6.366168975830078,
+    6.645887851715088,
+    6.2761921882629395,
+    6.122700214385986
+  ],
+  "latency_ms": 508.85810000181664,
+  "checks": {
+    "shape_valid": true,
+    "finite_outputs": true,
+    "interval_order_valid": true,
+    "speed_bounds_valid": true,
+    "confidence_bounds_valid": true,
+    "calibration_sample_count_valid": true
+  }
+}

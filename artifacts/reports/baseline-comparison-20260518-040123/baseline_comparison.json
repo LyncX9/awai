@@ -1,0 +1,98 @@
+{
+  "run_id": "baseline-comparison-20260518-040123",
+  "active_model_version": "lstm-real-20260518-032721",
+  "created_at": "2026-05-18T04:03:51.097496",
+  "split_statistics": {
+    "train_rows": 86400,
+    "validation_rows": 28800,
+    "test_rows": 22850,
+    "train_start": "2026-04-01 09:45:00+07:00",
+    "train_end": "2026-04-19 09:30:00+07:00",
+    "validation_start": "2026-04-19 09:45:00+07:00",
+    "validation_end": "2026-04-25 09:30:00+07:00",
+    "test_start": "2026-04-25 09:45:00+07:00",
+    "test_end": "2026-04-30 03:45:00+07:00",
+    "train_road_count": 50,
+    "validation_road_count": 50,
+    "test_road_count": 50
+  },
+  "sequence_shapes": {
+    "X_train": [
+      85650,
+      12,
+      41
+    ],
+    "y_train": [
+      85650,
+      4,
+      1
+    ],
+    "X_test": [
+      22100,
+      12,
+      41
+    ],
+    "y_test": [
+      22100,
+      4,
+      1
+    ]
+  },
+  "best_model_by_rmse": {
+    "model": "linear_regression",
+    "status": "ok",
+    "mae": 1.5927146221524078,
+    "rmse": 2.442051208198632,
+    "mape": 5.781622913728022,
+    "accuracy_from_mape": 94.21837708627197,
+    "r2": 0.8780872820611877,
+    "sample_count": 88400,
+    "detail": ""
+  },
+  "comparison": [
+    {
+      "model": "linear_regression",
+      "status": "ok",
+      "mae": 1.5927146221524078,
+      "rmse": 2.442051208198632,
+      "mape": 5.781622913728022,
+      "accuracy_from_mape": 94.21837708627197,
+      "r2": 0.8780872820611877,
+      "sample_count": 88400,
+      "detail": ""
+    },
+    {
+      "model": "historical_average",
+      "status": "ok",
+      "mae": 1.638562189630154,
+      "rmse": 2.6871528044575306,
+      "mape": 5.956119693662367,
+      "accuracy_from_mape": 94.04388030633763,
+      "r2": 0.8523871358868585,
+      "sample_count": 88400,
+      "detail": ""
+    },
+    {
+      "model": "naive_persistence",
+      "status": "ok",
+      "mae": 1.5020475127470438,
+      "rmse": 2.868361903703151,
+      "mape": 5.602933799210226,
+      "accuracy_from_mape": 94.39706620078978,
+      "r2": 0.8318072110747301,
+      "sample_count": 88400,
+      "detail": ""
+    },
+    {
+      "model": "lstm-real-20260518-032721",
+      "status": "ok",
+      "mae": 3.119325978130237,
+      "rmse": 4.741212343091945,
+      "mape": 10.748332526333208,
+      "accuracy_from_mape": 89.2516674736668,
+      "r2": 0.5404653189167612,
+      "sample_count": 88400,
+      "detail": "trained LSTM checkpoint"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "active_model_version": null,
+  "models": [
+    {
+      "model_version": "lstm-20260520-084537",
+      "artifact_path": "C:\\AIproject\\AWAI\\artifacts\\test_runs\\model_registry\\e5d80482dce8429a9053a5d2cd1d2dff\\models\\candidate",
+      "created_at": "2026-05-20T08:45:37.696667",
+      "model_type": "lstm",
+      "framework": "pytorch",
+      "metrics": {},
+      "config": {},
+      "tags": [],
+      "is_active": false
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+horizon_minutes,test_name,comparisons,significant_count,baseline_wins,lstm_wins
+15,diebold_mariano,3,3,3,0
+15,paired_t_test,3,3,3,0
+30,diebold_mariano,3,3,3,0
+30,paired_t_test,3,3,3,0
+45,diebold_mariano,3,3,3,0
+45,paired_t_test,3,3,3,0
+60,diebold_mariano,3,3,3,0
+60,paired_t_test,3,3,3,0

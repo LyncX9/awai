@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.env
+.env.*
+!.env.example
+*.egg-info/
+dist/
+build/
+
+# PyTorch / ML artifacts
+*.pt
+*.pth
+*.pkl
+*.h5
+
+# Jupyter
+.ipynb_checkpoints/
+notebooks/.ipynb_checkpoints/
+
+# Testing
+.pytest_cache/
+pytest-cache-files-*/
+.hypothesis/
+htmlcov/
+.coverage
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Vercel
+frontend/.vercel/
+
+# Dataset (large files)
+dataset/*.csv
+dataset/*.json
+
+# Logs
+*.log
+logs/
+
+# Kiro
+.kiro/
+
+# Progress (too large)
+progress.md

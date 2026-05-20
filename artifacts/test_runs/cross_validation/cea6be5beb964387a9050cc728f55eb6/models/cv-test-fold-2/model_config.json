@@ -1,0 +1,46 @@
+{
+  "model_version": "cv-test-fold-2",
+  "created_at": "2026-05-18T06:24:13.504790",
+  "model_type": "lstm",
+  "framework": "pytorch",
+  "checkpoint_path": "artifacts\\test_runs\\cross_validation\\cea6be5beb964387a9050cc728f55eb6\\models\\cv-test-fold-2\\model.pt",
+  "model_config": {
+    "input_size": 3,
+    "prediction_horizon": 2,
+    "hidden_sizes": [
+      6,
+      3
+    ],
+    "dense_units": 4,
+    "dropout": 0.3,
+    "recurrent_dropout": 0.2,
+    "bidirectional": false
+  },
+  "training_config": {
+    "max_epochs": 1,
+    "batch_size": 4,
+    "learning_rate": 0.001,
+    "early_stopping_patience": 2,
+    "lr_plateau_patience": 5,
+    "lr_plateau_factor": 0.5,
+    "warmup_epochs": 0,
+    "warmup_start_factor": 0.1,
+    "gradient_clip_norm": 1.0,
+    "weight_decay": 0.0001,
+    "random_seed": 42,
+    "device": "cpu"
+  },
+  "parameter_count": 440,
+  "best_epoch": 1,
+  "metrics": {
+    "train_loss": 1.0430097381273906,
+    "validation_loss": 0.648572564125061,
+    "validation_mae": 0.7003965377807617,
+    "validation_rmse": 0.8053400301270645
+  },
+  "extra_metadata": {
+    "cv_fold_index": 2,
+    "train_size": 12,
+    "validation_size": 4
+  }
+}

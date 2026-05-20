@@ -1,0 +1,41 @@
+{
+  "model_version": "warmup-model",
+  "created_at": "2026-05-17T20:14:38.265364",
+  "model_type": "lstm",
+  "framework": "pytorch",
+  "checkpoint_path": "artifacts\\test_runs\\trainer\\de575b320fda47cab5c2d59be0d3da98\\models\\warmup-model\\model.pt",
+  "model_config": {
+    "input_size": 5,
+    "prediction_horizon": 2,
+    "hidden_sizes": [
+      8,
+      4
+    ],
+    "dense_units": 4,
+    "dropout": 0.3,
+    "bidirectional": false
+  },
+  "training_config": {
+    "max_epochs": 3,
+    "batch_size": 4,
+    "learning_rate": 0.01,
+    "early_stopping_patience": 5,
+    "lr_plateau_patience": 5,
+    "lr_plateau_factor": 0.5,
+    "warmup_epochs": 3,
+    "warmup_start_factor": 0.1,
+    "gradient_clip_norm": 1.0,
+    "weight_decay": 0.0001,
+    "random_seed": 42,
+    "device": "cpu"
+  },
+  "parameter_count": 758,
+  "best_epoch": 3,
+  "metrics": {
+    "train_loss": 0.1326752578218778,
+    "validation_loss": 0.04100697301328182,
+    "validation_mae": 0.17559505254030228,
+    "validation_rmse": 0.20250178521011072
+  },
+  "extra_metadata": {}
+}

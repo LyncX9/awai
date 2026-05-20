@@ -1,0 +1,56 @@
+{
+  "status": "passed",
+  "original_sample_count": 85650,
+  "augmented_sample_count": 171300,
+  "parameters": {
+    "factor": 2,
+    "noise_std": 0.01,
+    "magnitude_min": 0.97,
+    "magnitude_max": 1.03,
+    "max_speed_jump": 80.0,
+    "min_speed": 0.0,
+    "max_speed": 120.0,
+    "preserve_feature_indices": [
+      12,
+      13,
+      14,
+      15
+    ]
+  },
+  "checks": [
+    {
+      "name": "shape_and_factor",
+      "status": "passed",
+      "expected_samples": 171300
+    },
+    {
+      "name": "finite_values",
+      "status": "passed"
+    },
+    {
+      "name": "temporal_consistency_original_prefix",
+      "status": "passed"
+    },
+    {
+      "name": "target_preservation",
+      "status": "passed"
+    },
+    {
+      "name": "rush_hour_preservation",
+      "status": "passed",
+      "preserved_feature_count": 4
+    },
+    {
+      "name": "speed_bounds",
+      "status": "passed",
+      "min_speed": 6.328712,
+      "max_speed": 54.926914
+    },
+    {
+      "name": "maximum_speed_jump",
+      "status": "passed",
+      "max_jump": 27.827099,
+      "limit": 80.0
+    }
+  ]
+}

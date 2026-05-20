@@ -1,0 +1,36 @@
+{
+  "status": "passed",
+  "model_version": "lstm-real-20260518-032721",
+  "artifact_path": "C:\\AIproject\\AWAI\\artifacts\\models\\lstm-real-20260518-032721",
+  "checkpoint_path": "C:\\AIproject\\AWAI\\artifacts\\models\\lstm-real-20260518-032721\\model.pt",
+  "framework": "pytorch",
+  "runner_location": "notebooks/07_lstm_model_runner_validation.ipynb",
+  "single_prediction_shape": [
+    1,
+    4,
+    1
+  ],
+  "batch_prediction_shape": [
+    32,
+    4,
+    1
+  ],
+  "single_prediction_kmh": [
+    25.415000915527344,
+    25.57900047302246,
+    25.937000274658203,
+    25.680999755859375
+  ],
+  "batch_prediction_min_kmh": 24.18708610534668,
+  "batch_prediction_max_kmh": 27.44232940673828,
+  "batch_first_32_mae_kmh": 1.3215411901474,
+  "single_latency_ms": 11.35870000871364,
+  "batch_latency_ms": 2.466600009938702,
+  "checks": {
+    "checkpoint_loaded": true,
+    "single_prediction_shape_valid": true,
+    "batch_prediction_shape_valid": true,
+    "predictions_are_finite": true,
+    "predictions_within_speed_bounds": true
+  }
+}

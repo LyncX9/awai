@@ -1,0 +1,33 @@
+{
+  "created_at": "2026-05-19T19:13:48.074547",
+  "n_splits": 2,
+  "folds": [
+    {
+      "fold_index": 1,
+      "train_size": 8,
+      "validation_size": 4,
+      "model_version": "cv-test-fold-1",
+      "artifact_path": "artifacts\\test_runs\\cross_validation\\609737a88eb845aaa4218d6b1b10b9aa\\models\\cv-test-fold-1",
+      "best_epoch": 1,
+      "train_loss": 1.051182121038437,
+      "validation_loss": 0.8585135340690613,
+      "validation_mae": 0.6493359804153442,
+      "validation_rmse": 0.9265600542161643
+    },
+    {
+      "fold_index": 2,
+      "train_size": 12,
+      "validation_size": 4,
+      "model_version": "cv-test-fold-2",
+      "artifact_path": "artifacts\\test_runs\\cross_validation\\609737a88eb845aaa4218d6b1b10b9aa\\models\\cv-test-fold-2",
+      "best_epoch": 1,
+      "train_loss": 1.0430097381273906,
+      "validation_loss": 0.648572564125061,
+      "validation_mae": 0.7003965377807617,
+      "validation_rmse": 0.8053400301270645
+    }
+  ],
+  "mean_validation_loss": 0.7535430490970612,
+  "mean_validation_mae": 0.674866259098053,
+  "mean_validation_rmse": 0.8659500421716144
+}

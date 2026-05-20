@@ -1,0 +1,272 @@
+{
+  "status": "passed",
+  "model_version": "lstm-real-20260518-032721",
+  "runner_location": "notebooks/08_realtime_inference_engine_validation.ipynb",
+  "road_id": "SBM_BHY_01",
+  "horizon_minutes": 60,
+  "predicted_speed": 29.29,
+  "congestion_level": "free_flow",
+  "confidence_score": 0.8775,
+  "uncertainty_lower": 28.29,
+  "uncertainty_upper": 30.29,
+  "single_response_time_ms": 100.468,
+  "batch_response_time_ms": 684.935,
+  "prediction_method": "live_lstm_notebook_engine",
+  "degraded": false,
+  "feature_quality": {
+    "road_id": "SBM_BHY_01",
+    "observed_timesteps": 12,
+    "required_timesteps": 12,
+    "has_minimum_history": true,
+    "missing_feature_columns": [],
+    "padded_timesteps": 0,
+    "status": "healthy"
+  },
+  "data_quality": {
+    "timestamp": "2026-04-30T03:45:01+07:00",
+    "completeness": 1.0,
+    "average_confidence": 1.0,
+    "stale_roads": [],
+    "missing_roads": [],
+    "delayed_roads": [],
+    "low_confidence_roads": [],
+    "outlier_roads": [],
+    "api_uptime": 1.0,
+    "fallback_recommendation": "use_live_lstm",
+    "quality_issues": {
+      "missing_roads": 0,
+      "stale_roads": 0,
+      "delayed_roads": 0,
+      "low_confidence_roads": 0,
+      "outlier_roads": 0,
+      "api_failures": 0
+    },
+    "status": "healthy"
+  },
+  "batch_predictions": [
+    {
+      "road_id": "SBM_BHY_01",
+      "horizon_minutes": 60,
+      "predicted_speed": 29.29,
+      "congestion_level": "free_flow",
+      "confidence_score": 0.8775,
+      "uncertainty_lower": 28.29,
+      "uncertainty_upper": 30.29,
+      "response_time_ms": 115.954,
+      "prediction_method": "live_lstm_notebook_engine",
+      "degraded": false,
+      "model_version": "lstm-real-20260518-032721",
+      "data_quality": {
+        "timestamp": "2026-04-30T03:45:01+07:00",
+        "completeness": 1.0,
+        "average_confidence": 1.0,
+        "stale_roads": [],
+        "missing_roads": [],
+        "delayed_roads": [],
+        "low_confidence_roads": [],
+        "outlier_roads": [],
+        "api_uptime": 1.0,
+        "fallback_recommendation": "use_live_lstm",
+        "quality_issues": {
+          "missing_roads": 0,
+          "stale_roads": 0,
+          "delayed_roads": 0,
+          "low_confidence_roads": 0,
+          "outlier_roads": 0,
+          "api_failures": 0
+        },
+        "status": "healthy"
+      },
+      "feature_quality": {
+        "road_id": "SBM_BHY_01",
+        "observed_timesteps": 12,
+        "required_timesteps": 12,
+        "has_minimum_history": true,
+        "missing_feature_columns": [],
+        "padded_timesteps": 0,
+        "status": "healthy"
+      }
+    },
+    {
+      "road_id": "SBM_BHY_02",
+      "horizon_minutes": 60,
+      "predicted_speed": 29.287,
+      "congestion_level": "free_flow",
+      "confidence_score": 0.8775,
+      "uncertainty_lower": 28.287,
+      "uncertainty_upper": 30.287,
+      "response_time_ms": 115.857,
+      "prediction_method": "live_lstm_notebook_engine",
+      "degraded": false,
+      "model_version": "lstm-real-20260518-032721",
+      "data_quality": {
+        "timestamp": "2026-04-30T03:45:01+07:00",
+        "completeness": 1.0,
+        "average_confidence": 1.0,
+        "stale_roads": [],
+        "missing_roads": [],
+        "delayed_roads": [],
+        "low_confidence_roads": [],
+        "outlier_roads": [],
+        "api_uptime": 1.0,
+        "fallback_recommendation": "use_live_lstm",
+        "quality_issues": {
+          "missing_roads": 0,
+          "stale_roads": 0,
+          "delayed_roads": 0,
+          "low_confidence_roads": 0,
+          "outlier_roads": 0,
+          "api_failures": 0
+        },
+        "status": "healthy"
+      },
+      "feature_quality": {
+        "road_id": "SBM_BHY_02",
+        "observed_timesteps": 12,
+        "required_timesteps": 12,
+        "has_minimum_history": true,
+        "missing_feature_columns": [],
+        "padded_timesteps": 0,
+        "status": "healthy"
+      }
+    },
+    {
+      "road_id": "SBM_BYK_01",
+      "horizon_minutes": 60,
+      "predicted_speed": 29.204,
+      "congestion_level": "free_flow",
+      "confidence_score": 0.8775,
+      "uncertainty_lower": 28.204,
+      "uncertainty_upper": 30.204,
+      "response_time_ms": 221.855,
+      "prediction_method": "live_lstm_notebook_engine",
+      "degraded": false,
+      "model_version": "lstm-real-20260518-032721",
+      "data_quality": {
+        "timestamp": "2026-04-30T03:45:01+07:00",
+        "completeness": 1.0,
+        "average_confidence": 1.0,
+        "stale_roads": [],
+        "missing_roads": [],
+        "delayed_roads": [],
+        "low_confidence_roads": [],
+        "outlier_roads": [],
+        "api_uptime": 1.0,
+        "fallback_recommendation": "use_live_lstm",
+        "quality_issues": {
+          "missing_roads": 0,
+          "stale_roads": 0,
+          "delayed_roads": 0,
+          "low_confidence_roads": 0,
+          "outlier_roads": 0,
+          "api_failures": 0
+        },
+        "status": "healthy"
+      },
+      "feature_quality": {
+        "road_id": "SBM_BYK_01",
+        "observed_timesteps": 12,
+        "required_timesteps": 12,
+        "has_minimum_history": true,
+        "missing_feature_columns": [],
+        "padded_timesteps": 0,
+        "status": "healthy"
+      }
+    },
+    {
+      "road_id": "SBM_BYK_02",
+      "horizon_minutes": 60,
+      "predicted_speed": 29.288,
+      "congestion_level": "free_flow",
+      "confidence_score": 0.8775,
+      "uncertainty_lower": 28.288,
+      "uncertainty_upper": 30.288,
+      "response_time_ms": 115.621,
+      "prediction_method": "live_lstm_notebook_engine",
+      "degraded": false,
+      "model_version": "lstm-real-20260518-032721",
+      "data_quality": {
+        "timestamp": "2026-04-30T03:45:01+07:00",
+        "completeness": 1.0,
+        "average_confidence": 1.0,
+        "stale_roads": [],
+        "missing_roads": [],
+        "delayed_roads": [],
+        "low_confidence_roads": [],
+        "outlier_roads": [],
+        "api_uptime": 1.0,
+        "fallback_recommendation": "use_live_lstm",
+        "quality_issues": {
+          "missing_roads": 0,
+          "stale_roads": 0,
+          "delayed_roads": 0,
+          "low_confidence_roads": 0,
+          "outlier_roads": 0,
+          "api_failures": 0
+        },
+        "status": "healthy"
+      },
+      "feature_quality": {
+        "road_id": "SBM_BYK_02",
+        "observed_timesteps": 12,
+        "required_timesteps": 12,
+        "has_minimum_history": true,
+        "missing_feature_columns": [],
+        "padded_timesteps": 0,
+        "status": "healthy"
+      }
+    },
+    {
+      "road_id": "SBM_BYK_03",
+      "horizon_minutes": 60,
+      "predicted_speed": 29.291,
+      "congestion_level": "free_flow",
+      "confidence_score": 0.8775,
+      "uncertainty_lower": 28.291,
+      "uncertainty_upper": 30.291,
+      "response_time_ms": 114.45,
+      "prediction_method": "live_lstm_notebook_engine",
+      "degraded": false,
+      "model_version": "lstm-real-20260518-032721",
+      "data_quality": {
+        "timestamp": "2026-04-30T03:45:01+07:00",
+        "completeness": 1.0,
+        "average_confidence": 1.0,
+        "stale_roads": [],
+        "missing_roads": [],
+        "delayed_roads": [],
+        "low_confidence_roads": [],
+        "outlier_roads": [],
+        "api_uptime": 1.0,
+        "fallback_recommendation": "use_live_lstm",
+        "quality_issues": {
+          "missing_roads": 0,
+          "stale_roads": 0,
+          "delayed_roads": 0,
+          "low_confidence_roads": 0,
+          "outlier_roads": 0,
+          "api_failures": 0
+        },
+        "status": "healthy"
+      },
+      "feature_quality": {
+        "road_id": "SBM_BYK_03",
+        "observed_timesteps": 12,
+        "required_timesteps": 12,
+        "has_minimum_history": true,
+        "missing_feature_columns": [],
+        "padded_timesteps": 0,
+        "status": "healthy"
+      }
+    }
+  ],
+  "checks": {
+    "live_buffer_has_roads": true,
+    "feature_sequence_shape_valid": true,
+    "single_prediction_within_bounds": true,
+    "confidence_within_bounds": true,
+    "single_response_under_target": true,
+    "batch_prediction_count_valid": true,
+    "batch_response_under_target": true
+  }
+}

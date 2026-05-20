@@ -1,0 +1,29 @@
+{
+  "run_id": "publication-figures-20260518-051036",
+  "active_model_version": "lstm-real-20260518-032721",
+  "created_at": "2026-05-18T05:12:38.155165",
+  "figure_dir": "C:\\AIproject\\AWAI\\artifacts\\figures\\publication-figures-20260518-051036",
+  "figure_count": 16,
+  "figures": [
+    "C:\\AIproject\\AWAI\\artifacts\\figures\\publication-figures-20260518-051036\\learning_curve_lstm.pdf",
+    "C:\\AIproject\\AWAI\\artifacts\\figures\\publication-figures-20260518-051036\\learning_curve_lstm.svg",
+    "C:\\AIproject\\AWAI\\artifacts\\figures\\publication-figures-20260518-051036\\baseline_comparison_mae_rmse.pdf",
+    "C:\\AIproject\\AWAI\\artifacts\\figures\\publication-figures-20260518-051036\\baseline_comparison_mae_rmse.svg",
+    "C:\\AIproject\\AWAI\\artifacts\\figures\\publication-figures-20260518-051036\\horizon_rmse_by_model.pdf",
+    "C:\\AIproject\\AWAI\\artifacts\\figures\\publication-figures-20260518-051036\\horizon_rmse_by_model.svg",
+    "C:\\AIproject\\AWAI\\artifacts\\figures\\publication-figures-20260518-051036\\lstm_gap_vs_best_baseline.pdf",
+    "C:\\AIproject\\AWAI\\artifacts\\figures\\publication-figures-20260518-051036\\lstm_gap_vs_best_baseline.svg",
+    "C:\\AIproject\\AWAI\\artifacts\\figures\\publication-figures-20260518-051036\\actual_vs_predicted_lstm.pdf",
+    "C:\\AIproject\\AWAI\\artifacts\\figures\\publication-figures-20260518-051036\\actual_vs_predicted_lstm.svg",
+    "C:\\AIproject\\AWAI\\artifacts\\figures\\publication-figures-20260518-051036\\error_distribution_boxplot.pdf",
+    "C:\\AIproject\\AWAI\\artifacts\\figures\\publication-figures-20260518-051036\\error_distribution_boxplot.svg",
+    "C:\\AIproject\\AWAI\\artifacts\\figures\\publication-figures-20260518-051036\\temporal_error_heatmap_lstm.pdf",
+    "C:\\AIproject\\AWAI\\artifacts\\figures\\publication-figures-20260518-051036\\temporal_error_heatmap_lstm.svg",
+    "C:\\AIproject\\AWAI\\artifacts\\figures\\publication-figures-20260518-051036\\spatial_error_map_lstm.pdf",
+    "C:\\AIproject\\AWAI\\artifacts\\figures\\publication-figures-20260518-051036\\spatial_error_map_lstm.svg"
+  ],
+  "notes": [
+    "Each figure is saved as PDF and SVG.",
+    "Prediction-based figures use the active LSTM checkpoint and the same test split as prior notebooks."
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "active_model_version": "v2",
+  "models": [
+    {
+      "model_version": "v1",
+      "artifact_path": "C:\\AIproject\\AWAI\\artifacts\\test_runs\\startup_orchestration\\7eeb872ea5f341aa8f2f99ffac6af25d\\models\\offline-1",
+      "created_at": "2026-05-19T16:57:57.186597",
+      "model_type": "lstm",
+      "framework": "pytorch",
+      "metrics": {},
+      "config": {},
+      "tags": [],
+      "is_active": false
+    },
+    {
+      "model_version": "v2",
+      "artifact_path": "C:\\AIproject\\AWAI\\artifacts\\test_runs\\startup_orchestration\\7eeb872ea5f341aa8f2f99ffac6af25d\\models\\offline-2",
+      "created_at": "2026-05-19T16:57:57.187685",
+      "model_type": "lstm",
+      "framework": "pytorch",
+      "metrics": {},
+      "config": {},
+      "tags": [],
+      "is_active": true
+    }
+  ]
+}

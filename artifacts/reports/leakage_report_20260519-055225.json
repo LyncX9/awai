@@ -1,0 +1,66 @@
+{
+  "created_at": "2026-05-19T05:50:26.133878",
+  "status": "passed",
+  "checks": [
+    {
+      "name": "temporal_split_order",
+      "status": "passed"
+    },
+    {
+      "name": "split_key_isolation",
+      "status": "passed"
+    },
+    {
+      "name": "train_feature_monotonicity",
+      "status": "passed"
+    },
+    {
+      "name": "train_lag_causality",
+      "status": "passed"
+    },
+    {
+      "name": "train_rolling_causality",
+      "status": "passed"
+    },
+    {
+      "name": "train_spatial_same_timestamp",
+      "status": "passed"
+    },
+    {
+      "name": "validation_feature_monotonicity",
+      "status": "passed"
+    },
+    {
+      "name": "validation_lag_causality",
+      "status": "passed"
+    },
+    {
+      "name": "validation_rolling_causality",
+      "status": "passed"
+    },
+    {
+      "name": "validation_spatial_same_timestamp",
+      "status": "passed"
+    },
+    {
+      "name": "test_feature_monotonicity",
+      "status": "passed"
+    },
+    {
+      "name": "test_lag_causality",
+      "status": "passed"
+    },
+    {
+      "name": "test_rolling_causality",
+      "status": "passed"
+    },
+    {
+      "name": "test_spatial_same_timestamp",
+      "status": "passed"
+    },
+    {
+      "name": "augmentation_train_only",
+      "status": "passed"
+    }
+  ]
+}

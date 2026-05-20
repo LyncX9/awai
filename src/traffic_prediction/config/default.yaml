@@ -1,0 +1,56 @@
+paths:
+  dataset_dir: dataset
+  traffic_csv: "dataset/traffic_data_latest (1).csv"
+  roads_csv: dataset/roads_master.csv
+  tomtom_mapping_csv: dataset/tomtom_road_mapping.csv
+  artifact_dir: artifacts
+  reports_dir: artifacts/reports
+  models_dir: artifacts/models
+  buffers_dir: artifacts/buffers
+  figures_dir: artifacts/figures
+  logs_dir: artifacts/logs
+
+data:
+  timezone: Asia/Jakarta
+  frequency: 15min
+  min_speed: 0.0
+  max_speed: 120.0
+  min_confidence: 0.5
+  train_days: 18
+  validation_days: 6
+  test_days: 6
+
+features:
+  lookback: 12
+  horizon: 4
+  lag_steps: [1, 2, 4, 8]
+  rolling_windows: [3, 6]
+  spatial_neighbor_count: 4
+
+training:
+  random_seed: 42
+  batch_size: 64
+  max_epochs: 100
+  learning_rate: 0.001
+
+api:
+  host: 0.0.0.0
+  port: 8000
+  max_request_bytes: 1000000
+  rate_limit_per_minute: 100
+  max_concurrent_requests: 8
+
+tomtom:
+  base_url: https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json
+  timeout_seconds: 5.0
+  max_retries: 3
+  backoff_seconds: 0.5
+  key_cooldown_seconds: 300.0
+
+runtime:
+  prediction_cache_ttl_seconds: 900
+  ingestion_interval_seconds: 900
+  log_level: INFO
+  log_retention_days: 30
+  scheduler_enabled: false
+  active_model_version:

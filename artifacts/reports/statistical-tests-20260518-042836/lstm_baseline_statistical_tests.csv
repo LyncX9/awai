@@ -1,0 +1,7 @@
+comparison_name,metric_name,statistic,p_value,effect_size,significant,alpha,test_name,sample_count,winner_from_mean_difference,mean_difference,ci_lower,ci_upper
+model_vs_naive_persistence,absolute_error,136.1282676131451,0.0,0.4578489105860603,True,0.05,paired_t_test,88400,baseline,1.617278465383193,1.5939926996675722,1.640564231098814
+model_vs_naive_persistence,squared_loss_difference,42.90158609156074,0.0,0.2729574684832,True,0.05,diebold_mariano,88400,baseline,14.251594471671849,13.907405952916845,14.595782990426853
+model_vs_historical_average,absolute_error,114.3363689245328,0.0,0.3845548236992932,True,0.05,paired_t_test,88400,baseline,1.4807637885000833,1.4553800592404444,1.506147517759722
+model_vs_historical_average,squared_loss_difference,43.74268251758009,0.0,0.2741175555242546,True,0.05,diebold_mariano,88400,baseline,15.258304287783446,14.891362370201643,15.625246205365249
+model_vs_linear_regression,absolute_error,139.67724361247593,0.0,0.4697854085925389,True,0.05,paired_t_test,88400,baseline,1.5266113559778294,1.5051895111064715,1.5480332008491873
+model_vs_linear_regression,squared_loss_difference,49.414571498807994,0.0,0.31603215579672816,True,0.05,diebold_mariano,88400,baseline,16.51548037882302,16.17098147716481,16.859979280481234

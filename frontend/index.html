@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWAI - Sukabumi Intelligent Traffic Analytics</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet.js for Interactive Geographic Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" 
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <!-- Chart.js for High-Fidelity Predictions -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation & Control Panel -->
+        <aside class="sidebar glass">
+            <div class="logo-area">
+                <div class="logo-icon">
+                    <i data-lucide="activity" class="pulse-icon"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>AWAI Traffic</h1>
+                    <span>Intelligent Predictive System</span>
+                </div>
+            </div>
+            
+            <nav class="nav-menu">
+                <button class="nav-item active" data-tab="dashboard">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button class="nav-item" data-tab="manual-ingest">
+                    <i data-lucide="edit-3"></i>
+                    <span>Manual Ingestion</span>
+                </button>
+                <button class="nav-item" data-tab="system-metrics">
+                    <i data-lucide="cpu"></i>
+                    <span>System Status</span>
+                </button>
+            </nav>
+            
+            <div class="sidebar-divider"></div>
+            
+            <!-- Quick System Health Widget -->
+            <div class="health-widget-compact">
+                <div class="health-title">System Status</div>
+                <div class="status-indicator-row">
+                    <span class="status-dot pulsing" id="health-dot"></span>
+                    <span class="status-label" id="health-label">Checking api connection...</span>
+                </div>
+                <div class="model-badge" id="model-badge">
+                    <i data-lucide="cpu"></i> <span id="active-model-name">Loading...</span>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Main Dashboard View -->
+        <main class="main-content">
+            <!-- Header Area -->
+            <header class="main-header glass">
+                <div class="header-title">
+                    <h2 id="view-title">Traffic Telemetry & Predictions</h2>
+                    <p id="view-subtitle">Real-time congestion map and LSTM prediction bounds for Sukabumi's 50 road segments</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" id="btn-refresh-data">
+                        <i data-lucide="refresh-cw"></i>
+                        <span>Refresh Analytics</span>
+                    </button>
+                    <div class="time-widget glass">
+                        <i data-lucide="clock"></i>
+                        <span id="current-time-wib">--:-- WIB</span>
+                    </div>
+                </div>
+            </header>
+            
+            <div class="view-panel active" id="panel-dashboard">
+                <!-- Top Overview Metrics Grid -->
+                <section class="metrics-grid">
+                    <div class="metric-card glass">
+                        <div class="metric-header">
+                            <span class="metric-label">Average System Speed</span>
+                            <div class="metric-icon violet"><i data-lucide="gauge"></i></div>
+                        </div>
+                        <div class="metric-value-row">
+                            <span class="metric-value" id="val-avg-speed">--</span>
+                            <span class="metric-unit">km/h</span>
+                        </div>
+                        <div class="metric-footer">
+                            <i data-lucide="trending-up" class="trend-up"></i>
+                            <span id="txt-speed-trend">Across all 50 road segments</span>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-card glass">
+                        <div class="metric-header">
+                            <span class="metric-label">Active Congestion</span>
+                            <div class="metric-icon red"><i data-lucide="alert-triangle"></i></div>
+                        </div>
+                        <div class="metric-value-row">
+                            <span class="metric-value" id="val-congested-roads">--</span>
+                            <span class="metric-unit">segments</span>
+                        </div>
+                        <div class="metric-footer">
+                            <span id="txt-congested-percentage">--% of total road network</span>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-card glass">
+                        <div class="metric-header">
+                            <span class="metric-label">Data Quality Score</span>
+                            <div class="metric-icon green"><i data-lucide="shield-check"></i></div>
+                        </div>
+                        <div class="metric-value-row">
+                            <span class="metric-value" id="val-quality-score">--</span>
+                            <span class="metric-unit">%</span>
+                        </div>
+                        <div class="metric-footer">
+                            <span id="txt-quality-status">Evaluating completeness</span>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-card glass">
+                        <div class="metric-header">
+                            <span class="metric-label">Prediction Mode</span>
+                            <div class="metric-icon blue"><i data-lucide="brain-circuit"></i></div>
+                        </div>
+                        <div class="metric-value-row">
+                            <span class="metric-value" id="val-pred-mode" style="font-size: 1.5rem; line-height: 2.2rem; font-weight: 700;">--</span>
+                        </div>
+                        <div class="metric-footer">
+                            <span id="txt-pred-cache">Active cache mapping</span>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Main Grid Layout: Map & Dynamic Telemetry Side panel -->
+                <div class="content-layout-grid">
+                    <!-- Left: Interactive Map Container -->
+                    <div class="map-container-card glass">
+                        <div class="card-header">
+                            <h3><i data-lucide="map"></i> Sukabumi Network Flow Map</h3>
+                            <div class="map-legend">
+                                <span class="legend-item"><span class="legend-dot green"></span> Free (>40)</span>
+                                <span class="legend-item"><span class="legend-dot amber"></span> Moderate (20-40)</span>
+                                <span class="legend-item"><span class="legend-dot red"></span> Congested (<20)</span>
+                            </div>
+                        </div>
+                        <div class="map-frame">
+                            <div id="traffic-map"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right: Dynamic Segment Panel & Forecast Chart -->
+                    <div class="telemetry-panel glass" id="telemetry-detail-panel">
+                        <!-- Default placeholder state -->
+                        <div class="empty-state-telemetry" id="telemetry-empty-state">
+                            <i data-lucide="mouse-pointer-click" class="bounce-icon"></i>
+                            <h4>No Segment Selected</h4>
+                            <p>Click on any road polyline on the map to view real-time telemetry, model outputs, and 60-minute forecasts.</p>
+                        </div>
+                        
+                        <!-- Telemetry content (initially hidden) -->
+                        <div class="telemetry-content hidden" id="telemetry-active-state">
+                            <div class="segment-meta-header">
+                                <div>
+                                    <h3 id="segment-name">Jl. Jenderal Achmad Yani</h3>
+                                    <span class="segment-id-badge" id="segment-id">SBM_JAY_01</span>
+                                </div>
+                                <span class="congestion-badge free" id="segment-congestion">Free Flow</span>
+                            </div>
+                            
+                            <!-- Speed and Confidence row -->
+                            <div class="speed-telemetry-row">
+                                <div class="speed-circle-container">
+                                    <div class="speed-ring" id="speed-ring"></div>
+                                    <div class="speed-inner-value">
+                                        <span class="speed-number" id="segment-current-speed">42</span>
+                                        <span class="speed-unit">km/h</span>
+                                    </div>
+                                </div>
+                                <div class="speed-indicators">
+                                    <div class="indicator-group">
+                                        <label>Confidence Score</label>
+                                        <div class="value-with-progress">
+                                            <span class="value-number" id="segment-confidence">95%</span>
+                                            <div class="progress-bar-bg">
+                                                <div class="progress-bar-fill" id="segment-confidence-bar" style="width: 95%;"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="indicator-group">
+                                        <label>Weight Coefficient</label>
+                                        <span class="value-number" id="segment-weight">0.55</span>
+                                    </div>
+                                    <div class="indicator-group">
+                                        <label>Last Updated</label>
+                                        <span class="value-number text-muted" id="segment-last-update">12 seconds ago</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card-divider"></div>
+                            
+                            <!-- Forecast Chart section -->
+                            <div class="forecast-section">
+                                <div class="forecast-header">
+                                    <h4><i data-lucide="line-chart"></i> 60-Minute Speed Forecast</h4>
+                                    <span class="forecast-info-icon" title="Shaded areas represent uncertainty bounds from the predictor">
+                                        <i data-lucide="help-circle"></i>
+                                    </span>
+                                </div>
+                                <div class="chart-container">
+                                    <canvas id="forecastChart"></canvas>
+                                </div>
+                                <div class="predictions-summary-grid">
+                                    <div class="pred-summary-card">
+                                        <label>15-Min</label>
+                                        <span class="val" id="pred-15m">--</span>
+                                    </div>
+                                    <div class="pred-summary-card">
+                                        <label>30-Min</label>
+                                        <span class="val" id="pred-30m">--</span>
+                                    </div>
+                                    <div class="pred-summary-card">
+                                        <label>45-Min</label>
+                                        <span class="val" id="pred-45m">--</span>
+                                    </div>
+                                    <div class="pred-summary-card">
+                                        <label>60-Min</label>
+                                        <span class="val" id="pred-60m">--</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Manual Ingest View -->
+            <div class="view-panel" id="panel-manual-ingest">
+                <div class="narrow-container">
+                    <div class="form-card glass">
+                        <div class="card-header">
+                            <i data-lucide="edit-3"></i>
+                            <h3>Manual Traffic Speed Ingestion</h3>
+                            <p>Inject current speed observations directly into the system cache and sync state to Supabase PostgreSQL.</p>
+                        </div>
+                        
+                        <div class="alert-box error hidden" id="ingest-alert-error">
+                            <i data-lucide="alert-circle"></i>
+                            <div class="alert-message">
+                                <strong>Submission Failed:</strong> <span id="ingest-error-text">Unknown error</span>
+                            </div>
+                        </div>
+                        
+                        <div class="alert-box success hidden" id="ingest-alert-success">
+                            <i data-lucide="check-circle2"></i>
+                            <div class="alert-message">
+                                <strong>Success!</strong> Ingested speed successfully. Prediction cache invalidated.
+                            </div>
+                        </div>
+                        
+                        <form id="form-manual-ingest">
+                            <div class="form-group">
+                                <label for="ingest-road-id">Select Road Segment</label>
+                                <select id="ingest-road-id" required class="glass-input">
+                                    <option value="" disabled selected>Select a segment...</option>
+                                    <!-- Populated dynamically -->
+                                </select>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="ingest-speed">Current Speed (1 to 120 km/h)</label>
+                                    <div class="input-with-addon">
+                                        <input type="number" id="ingest-speed" min="1" max="120" step="0.1" required class="glass-input" placeholder="e.g. 42.5">
+                                        <span class="input-addon">km/h</span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="ingest-confidence">Confidence Value (0.1 to 1.0)</label>
+                                    <input type="number" id="ingest-confidence" min="0.1" max="1.0" step="0.01" required value="0.95" class="glass-input" placeholder="e.g. 0.95">
+                                </div>
+                            </div>
+                            
+                            <div class="form-divider"></div>
+                            
+                            <div class="form-actions">
+                                <button type="button" class="btn btn-secondary" id="btn-demo-ingest">Inject Demo Network Data</button>
+                                <button type="submit" class="btn btn-primary" id="btn-submit-ingest">
+                                    <i data-lucide="send"></i>
+                                    <span>Ingest Speed Record</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- System Metrics View -->
+            <div class="view-panel" id="panel-system-metrics">
+                <section class="system-grid">
+                    <!-- API Readiness -->
+                    <div class="metric-card glass">
+                        <div class="card-header">
+                            <h3><i data-lucide="activity"></i> API Readiness & Setup</h3>
+                        </div>
+                        <div class="metrics-list" id="ready-details-list">
+                            <div class="loading-spinner-container"><div class="spinner"></div></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Scheduler status -->
+                    <div class="metric-card glass">
+                        <div class="card-header">
+                            <h3><i data-lucide="calendar"></i> In-Process Jobs</h3>
+                        </div>
+                        <div class="metrics-list" id="scheduler-details-list">
+                            <div class="loading-spinner-container"><div class="spinner"></div></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Data Quality and drift -->
+                    <div class="metric-card glass full-width">
+                        <div class="card-header">
+                            <h3><i data-lucide="shield-alert"></i> Data Quality Audit & Drift Monitor</h3>
+                        </div>
+                        <div class="quality-audit-container">
+                            <div class="quality-score-pie">
+                                <div class="donut-chart" id="quality-donut">
+                                    <div class="donut-hole"></div>
+                                </div>
+                                <div class="donut-label">
+                                    <span class="value" id="audit-completeness">--%</span>
+                                    <span class="label">Completeness</span>
+                                </div>
+                            </div>
+                            <div class="quality-stats">
+                                <div class="audit-row">
+                                    <span>Data Completeness Score:</span>
+                                    <strong id="audit-comp-txt">--</strong>
+                                </div>
+                                <div class="audit-row">
+                                    <span>Stale Segments count:</span>
+                                    <span class="badge" id="audit-stale-count">--</span>
+                                </div>
+                                <div class="audit-row">
+                                    <span>Missing Segments count:</span>
+                                    <span class="badge" id="audit-missing-count">--</span>
+                                </div>
+                                <div class="audit-row">
+                                    <span>Drift Check Status:</span>
+                                    <span class="badge" id="audit-drift-status">--</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Script code -->
+    <script src="app.js"></script>
+</body>
+</html>

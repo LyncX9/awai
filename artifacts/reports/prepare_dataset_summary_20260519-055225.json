@@ -1,0 +1,152 @@
+{
+  "traffic_validation": {
+    "row_count": 138000,
+    "road_count": 50,
+    "date_range_start": "2026-04-01T09:58:15",
+    "date_range_end": "2026-04-30T03:45:01",
+    "missing_values": {
+      "id": 0,
+      "road_id": 0,
+      "road_name": 0,
+      "city": 0,
+      "road_weight": 0,
+      "current_speed": 0,
+      "free_flow_speed": 0,
+      "current_travel_time": 0,
+      "free_flow_travel_time": 0,
+      "confidence": 0,
+      "road_closure": 0,
+      "frc": 0,
+      "sample_lat": 0,
+      "sample_lon": 0,
+      "collected_at_wib": 0
+    },
+    "invalid_speed_count": 0,
+    "invalid_confidence_count": 0,
+    "duplicate_count": 0,
+    "is_chronological_per_road": true
+  },
+  "road_validation": {
+    "row_count": 50,
+    "road_count": 50,
+    "date_range_start": null,
+    "date_range_end": null,
+    "missing_values": {
+      "road_id": 0,
+      "road_name": 0,
+      "city": 0,
+      "road_weight": 0,
+      "start_lat": 0,
+      "start_lon": 0,
+      "end_lat": 0,
+      "end_lon": 0,
+      "mid_lat": 0,
+      "mid_lon": 0
+    },
+    "invalid_speed_count": 0,
+    "invalid_confidence_count": 0,
+    "duplicate_count": 0,
+    "is_chronological_per_road": true
+  },
+  "split_report": {
+    "train_rows": 86400,
+    "validation_rows": 28800,
+    "test_rows": 22850,
+    "train_start": "2026-04-01T09:45:00+07:00",
+    "train_end": "2026-04-19T09:30:00+07:00",
+    "validation_start": "2026-04-19T09:45:00+07:00",
+    "validation_end": "2026-04-25T09:30:00+07:00",
+    "test_start": "2026-04-25T09:45:00+07:00",
+    "test_end": "2026-04-30T03:45:00+07:00",
+    "train_road_count": 50,
+    "validation_road_count": 50,
+    "test_road_count": 50
+  },
+  "feature_manifest": {
+    "feature_columns": [
+      "road_weight",
+      "current_speed",
+      "free_flow_speed",
+      "current_travel_time",
+      "free_flow_travel_time",
+      "confidence",
+      "road_closure",
+      "sample_lat",
+      "sample_lon",
+      "speed_ratio",
+      "hour_of_day",
+      "day_of_week",
+      "is_weekend",
+      "is_morning_peak",
+      "is_evening_peak",
+      "is_rush_hour",
+      "time_since_midnight",
+      "hour_sin",
+      "hour_cos",
+      "day_sin",
+      "day_cos",
+      "lag_1",
+      "lag_2",
+      "lag_4",
+      "lag_8",
+      "rolling_mean_3",
+      "rolling_std_3",
+      "rolling_min_3",
+      "rolling_max_3",
+      "rolling_mean_6",
+      "rolling_std_6",
+      "rolling_min_6",
+      "rolling_max_6",
+      "speed_delta",
+      "speed_acceleration",
+      "congestion_transition_indicator",
+      "speed_volatility",
+      "neighbor_speed_mean",
+      "neighbor_speed_std",
+      "neighbor_speed_min",
+      "neighbor_speed_max"
+    ],
+    "target_column": "current_speed",
+    "lookback": 12,
+    "horizon": 4,
+    "feature_version": "features-v1",
+    "scaler_version": "scalers-v1"
+  },
+  "dataset_bundle": {
+    "X_train_shape": [
+      171300,
+      12,
+      41
+    ],
+    "y_train_shape": [
+      171300,
+      4,
+      1
+    ],
+    "X_validation_shape": [
+      28050,
+      12,
+      41
+    ],
+    "y_validation_shape": [
+      28050,
+      4,
+      1
+    ],
+    "X_test_shape": [
+      22100,
+      12,
+      41
+    ],
+    "y_test_shape": [
+      22100,
+      4,
+      1
+    ],
+    "feature_count": 41,
+    "train_samples": 171300,
+    "validation_samples": 28050,
+    "test_samples": 22100
+  },
+  "leakage_status": "passed"
+}

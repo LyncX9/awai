@@ -1,0 +1,76 @@
+{
+  "active_model_version": "lstm-real-20260518-032721",
+  "models": [
+    {
+      "model_version": "offline-20260517-191818",
+      "artifact_path": "C:\\AIproject\\AWAI\\artifacts\\models\\offline-20260517-191818",
+      "created_at": "2026-05-17T19:40:39.469839",
+      "model_type": "pretraining-artifacts",
+      "framework": "artifact-only",
+      "metrics": {},
+      "config": {},
+      "tags": [
+        "offline-pipeline"
+      ],
+      "is_active": false
+    },
+    {
+      "model_version": "offline-20260517-192423",
+      "artifact_path": "C:\\AIproject\\AWAI\\artifacts\\models\\offline-20260517-192423",
+      "created_at": "2026-05-17T19:40:39.470633",
+      "model_type": "pretraining-artifacts",
+      "framework": "artifact-only",
+      "metrics": {},
+      "config": {},
+      "tags": [
+        "offline-pipeline"
+      ],
+      "is_active": false
+    },
+    {
+      "model_version": "lstm-real-20260518-032721",
+      "artifact_path": "C:\\AIproject\\AWAI\\artifacts\\models\\lstm-real-20260518-032721",
+      "created_at": "2026-05-18T03:38:36.484050",
+      "model_type": "lstm",
+      "framework": "pytorch",
+      "metrics": {
+        "train_loss": 0.641089062359134,
+        "validation_loss": 0.43069454024501025,
+        "validation_mae": 0.43222642694565067,
+        "validation_rmse": 0.6562732207306631
+      },
+      "config": {
+        "model_config": {
+          "input_size": 41,
+          "prediction_horizon": 4,
+          "hidden_sizes": [
+            64,
+            32
+          ],
+          "dense_units": 16,
+          "dropout": 0.3,
+          "recurrent_dropout": 0.2,
+          "bidirectional": false
+        },
+        "training_config": {
+          "max_epochs": 100,
+          "batch_size": 64,
+          "learning_rate": 0.001,
+          "early_stopping_patience": 15,
+          "lr_plateau_patience": 5,
+          "lr_plateau_factor": 0.5,
+          "warmup_epochs": 10,
+          "warmup_start_factor": 0.1,
+          "gradient_clip_norm": 1.0,
+          "weight_decay": 0.0001,
+          "random_seed": 42,
+          "device": "cpu"
+        }
+      },
+      "tags": [
+        "trained-model"
+      ],
+      "is_active": true
+    }
+  ]
+}

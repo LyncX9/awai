@@ -1,0 +1,24 @@
+{
+  "model_version": "lstm-real-20260518-032721",
+  "validation_metrics_scaled": {
+    "loss": 0.43069454024501025,
+    "mae": 0.43222642694565067,
+    "rmse": 0.6562732207306631
+  },
+  "test_metrics_scaled": {
+    "mae": 0.42940093421516307,
+    "rmse": 0.6526669586330787,
+    "mape": 173.1737025714103,
+    "r2": 0.5404653246275661,
+    "sample_count": 88400
+  },
+  "test_metrics_kmh": {
+    "mae": 3.119325978130237,
+    "rmse": 4.741212343091945,
+    "mape": 10.748332526333208,
+    "r2": 0.5404653189167612,
+    "sample_count": 88400
+  },
+  "checkpoint_path": "C:\\AIproject\\AWAI\\artifacts\\models\\lstm-real-20260518-032721\\model.pt",
+  "artifact_path": "C:\\AIproject\\AWAI\\artifacts\\models\\lstm-real-20260518-032721"
+}

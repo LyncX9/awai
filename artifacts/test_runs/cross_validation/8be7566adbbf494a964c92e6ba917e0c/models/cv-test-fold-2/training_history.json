@@ -1,0 +1,12 @@
+{
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.0430097381273906,
+      "validation_loss": 0.648572564125061,
+      "validation_mae": 0.7003965377807617,
+      "validation_rmse": 0.8053400301270645,
+      "learning_rate": 0.001
+    }
+  ]
+}

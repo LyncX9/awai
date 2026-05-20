@@ -1,0 +1,8 @@
+{
+  "name": "awai-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "mkdir -p dist && cp index.html style.css app.js package.json vercel.json dist/"
+  }
+}

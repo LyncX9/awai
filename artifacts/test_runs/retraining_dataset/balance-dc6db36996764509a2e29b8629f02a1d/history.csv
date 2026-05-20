@@ -1,0 +1,5 @@
+id,road_id,road_name,city,road_weight,current_speed,free_flow_speed,current_travel_time,free_flow_travel_time,confidence,road_closure,frc,sample_lat,sample_lon,collected_at_wib
+0,R00,Road 0,SUKABUMI,0.5,58.0,60.0,100,80,0.95,0,FRC2,-6.9,106.9,2026-01-01 00:00:00
+1,R00,Road 0,SUKABUMI,0.5,38.0,60.0,100,80,0.95,0,FRC2,-6.9,106.9,2026-01-01 01:00:00
+2,R01,Road 1,SUKABUMI,0.5,38.0,60.0,100,80,0.95,0,FRC2,-6.9,106.9,2026-01-01 00:00:00
+3,R01,Road 1,SUKABUMI,0.5,20.0,60.0,100,80,0.95,0,FRC2,-6.9,106.9,2026-01-01 01:00:00

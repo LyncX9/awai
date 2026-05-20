@@ -1,0 +1,134 @@
+{
+  "run_id": "offline-20260519-021404",
+  "created_at": "2026-05-19T02:14:05.005887",
+  "traffic_validation": {
+    "row_count": 138000,
+    "road_count": 50,
+    "date_range_start": "2026-04-01 09:58:15",
+    "date_range_end": "2026-04-30 03:45:01",
+    "missing_values": {
+      "id": 0,
+      "road_id": 0,
+      "road_name": 0,
+      "city": 0,
+      "road_weight": 0,
+      "current_speed": 0,
+      "free_flow_speed": 0,
+      "current_travel_time": 0,
+      "free_flow_travel_time": 0,
+      "confidence": 0,
+      "road_closure": 0,
+      "frc": 0,
+      "sample_lat": 0,
+      "sample_lon": 0,
+      "collected_at_wib": 0
+    },
+    "invalid_speed_count": 0,
+    "invalid_confidence_count": 0,
+    "duplicate_count": 0,
+    "is_chronological_per_road": true
+  },
+  "split_statistics": {
+    "train_rows": 86400,
+    "validation_rows": 28800,
+    "test_rows": 22850,
+    "train_start": "2026-04-01 09:45:00+07:00",
+    "train_end": "2026-04-19 09:30:00+07:00",
+    "validation_start": "2026-04-19 09:45:00+07:00",
+    "validation_end": "2026-04-25 09:30:00+07:00",
+    "test_start": "2026-04-25 09:45:00+07:00",
+    "test_end": "2026-04-30 03:45:00+07:00",
+    "train_road_count": 50,
+    "validation_road_count": 50,
+    "test_road_count": 50
+  },
+  "road_count": 50,
+  "neighbor_mapping_count": 50,
+  "feature_count": 41,
+  "feature_columns": [
+    "road_weight",
+    "current_speed",
+    "free_flow_speed",
+    "current_travel_time",
+    "free_flow_travel_time",
+    "confidence",
+    "road_closure",
+    "sample_lat",
+    "sample_lon",
+    "speed_ratio",
+    "hour_of_day",
+    "day_of_week",
+    "is_weekend",
+    "is_morning_peak",
+    "is_evening_peak",
+    "is_rush_hour",
+    "time_since_midnight",
+    "hour_sin",
+    "hour_cos",
+    "day_sin",
+    "day_cos",
+    "lag_1",
+    "lag_2",
+    "lag_4",
+    "lag_8",
+    "rolling_mean_3",
+    "rolling_std_3",
+    "rolling_min_3",
+    "rolling_max_3",
+    "rolling_mean_6",
+    "rolling_std_6",
+    "rolling_min_6",
+    "rolling_max_6",
+    "speed_delta",
+    "speed_acceleration",
+    "congestion_transition_indicator",
+    "speed_volatility",
+    "neighbor_speed_mean",
+    "neighbor_speed_std",
+    "neighbor_speed_min",
+    "neighbor_speed_max"
+  ],
+  "sequence_shapes": {
+    "X_train": [
+      85650,
+      12,
+      41
+    ],
+    "y_train": [
+      85650,
+      4,
+      1
+    ],
+    "X_validation": [
+      28050,
+      12,
+      41
+    ],
+    "y_validation": [
+      28050,
+      4,
+      1
+    ],
+    "X_test": [
+      22100,
+      12,
+      41
+    ],
+    "y_test": [
+      22100,
+      4,
+      1
+    ]
+  },
+  "sequence_counts": {
+    "train": 85650,
+    "validation": 28050,
+    "test": 22100
+  },
+  "artifacts": {
+    "cleaned_dataset": "C:\\AIproject\\AWAI\\artifacts\\reports\\offline-20260519-021404\\cleaned_dataset.pkl",
+    "featured_dataset": "C:\\AIproject\\AWAI\\artifacts\\reports\\offline-20260519-021404\\featured_dataset.pkl",
+    "scaler_params": "C:\\AIproject\\AWAI\\artifacts\\models\\offline-20260519-021404\\scaler_params.joblib",
+    "feature_manifest": "C:\\AIproject\\AWAI\\artifacts\\models\\offline-20260519-021404\\feature_manifest.json"
+  }
+}
