@@ -84,34 +84,51 @@ class RealtimePredictionPipeline:
         feature_result: OnlineFeatureResult | None,
         feature_error: str | None,
     ) -> PredictionResponse:
+        model_inference_failed = True
+        predicted_speed = 30.0
+        uncertainty_margin = 1.0
+        active_error = feature_error
+
         if self.model_runner is not None and feature_result is not None:
             try:
                 horizon_values = np.asarray(self.model_runner.predict_kmh(feature_result.sequence), dtype=float).reshape(-1)
                 horizon_index = self._horizon_index(context.request.horizon_minutes)
                 if horizon_index >= len(horizon_values):
                     raise ValueError("model runner returned fewer horizon predictions than requested")
-                return self._format_live_response(
-                    context=context,
-                    predicted_speed=float(horizon_values[horizon_index]),
-                    uncertainty_margin=max(float(np.std(horizon_values)), 1.0),
-                    quality_report=quality_report,
-                    feature_result=feature_result,
-                )
+                predicted_speed = float(horizon_values[horizon_index])
+                uncertainty_margin = max(float(np.std(horizon_values)), 1.0)
+                model_inference_failed = False
             except Exception as exc:
-                feature_error = f"model_inference_error: {exc}"
+                active_error = f"model_inference_error: {exc}"
 
+        if not model_inference_failed:
+            return self._format_live_response(
+                context=context,
+                predicted_speed=predicted_speed,
+                uncertainty_margin=uncertainty_margin,
+                quality_report=quality_report,
+                feature_result=feature_result,
+            )
+
+        # Fallback path (LSTM failed or wasn't run)
+        latest_record = self._latest_live_record(context.request.road_id)
         fallback = self.fallback_predictor.predict(
             road_id=context.request.road_id,
             target_time=context.target_time,
             horizon_minutes=context.request.horizon_minutes,
+            # If we have any live data at all, use the latest observation as the prediction base
+            # rather than the hardcoded global_default (30.0 km/h).
+            latest_live_record=latest_record,
+            prefer_persistence=latest_record is not None and context.request.horizon_minutes <= 30,  # Prefer persistence for short horizons if any live record is available
         )
         return self._format_fallback_response(
             context=context,
             fallback=fallback,
             quality_report=quality_report,
             feature_result=feature_result,
-            feature_error=feature_error,
+            feature_error=active_error,
         )
+
 
     def _format_live_response(
         self,
@@ -259,6 +276,11 @@ class RealtimePredictionPipeline:
         if not records:
             return None
         return float(records[-1].current_speed)
+
+    def _latest_live_record(self, road_id: str):
+        """Return the most recent LiveTrafficRecord for a road, or None if the buffer is empty."""
+        records = self.live_buffer.get_latest(road_id, n=1)
+        return records[-1] if records else None
 
     @staticmethod
     def _free_flow_speed(road_record: dict, predicted_speed: float) -> float:

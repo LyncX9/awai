@@ -820,25 +820,83 @@ class AppState:
         return None
 
     def _load_historical_prediction_tables(self) -> None:
-        if not self.config.paths.traffic_csv.exists():
-            return
-        traffic = pd.read_csv(self.config.paths.traffic_csv)
-        required = {"road_id", "collected_at_wib", "current_speed"}
-        if not required.issubset(traffic.columns):
-            return
-        traffic["collected_at_wib"] = pd.to_datetime(traffic["collected_at_wib"], errors="coerce")
-        traffic = traffic.dropna(subset=["collected_at_wib", "current_speed"]).copy()
-        if "confidence" in traffic.columns:
-            traffic = traffic[traffic["confidence"] >= self.config.data.min_confidence].copy()
-        traffic["hour"] = traffic["collected_at_wib"].dt.hour
-        traffic["day_of_week"] = traffic["collected_at_wib"].dt.dayofweek
-        self.historical_lookup = traffic.groupby(["road_id", "hour", "day_of_week"])["current_speed"].mean()
-        self.road_mean_speed = traffic.groupby("road_id")["current_speed"].mean()
-        self.latest_timestamp_by_road = traffic.groupby("road_id")["collected_at_wib"].max()
+        # 1. Initialize baseline mean speed from master road list (using free_flow_speed)
+        default_means = {}
+        if self.roads is not None and not self.roads.empty:
+            for _, row in self.roads.iterrows():
+                default_means[str(row["road_id"])] = float(row.get("free_flow_speed", 30.0) or 30.0)
+
+        self.road_mean_speed = pd.Series(default_means)
+        self.historical_lookup = pd.Series(dtype=float)
+        self.latest_timestamp_by_road = pd.Series(dtype=object)
+
+        traffic = None
+        # 2. Try loading from local CSV
+        if self.config.paths.traffic_csv.exists():
+            try:
+                traffic = pd.read_csv(self.config.paths.traffic_csv)
+                required = {"road_id", "collected_at_wib", "current_speed"}
+                if not required.issubset(traffic.columns):
+                    traffic = None
+            except Exception as e:
+                self.app_logger.warning("csv_historical_load_failed", extra={"error": str(e)})
+                traffic = None
+
+        # 3. Fallback to PostgreSQL database if local CSV is missing/failed
+        if traffic is None and self.db is not None:
+            try:
+                self.app_logger.info("loading_historical_traffic_from_db")
+                traffic_data = []
+                with self.db._connect() as connection:
+                    with connection.cursor() as cursor:
+                        cursor.execute(
+                            "SELECT road_id, timestamp_wib, current_speed, confidence FROM live_traffic_records"
+                        )
+                        rows = cursor.fetchall()
+                        for row in rows:
+                            traffic_data.append({
+                                "road_id": str(row[0]),
+                                "collected_at_wib": str(row[1]),
+                                "current_speed": float(row[2]),
+                                "confidence": float(row[3]),
+                            })
+                if traffic_data:
+                    traffic = pd.DataFrame(traffic_data)
+                    self.app_logger.info("historical_traffic_loaded_from_db", extra={"records_count": len(traffic)})
+            except Exception as e:
+                self.app_logger.error("postgres_historical_load_failed", extra={"error": str(e)})
+
+        # 4. Process loaded traffic dataframe to build actual mean speeds and temporal patterns
+        if traffic is not None and not traffic.empty:
+            try:
+                traffic["collected_at_wib"] = pd.to_datetime(traffic["collected_at_wib"], errors="coerce")
+                traffic = traffic.dropna(subset=["collected_at_wib", "current_speed"]).copy()
+                if "confidence" in traffic.columns:
+                    min_conf = getattr(self.config.data, "min_confidence", 0.1)
+                    traffic = traffic[traffic["confidence"] >= min_conf].copy()
+
+                traffic["hour"] = traffic["collected_at_wib"].dt.hour
+                traffic["day_of_week"] = traffic["collected_at_wib"].dt.dayofweek
+
+                # Build lookup and mean speed
+                db_lookup = traffic.groupby(["road_id", "hour", "day_of_week"])["current_speed"].mean()
+                db_mean = traffic.groupby("road_id")["current_speed"].mean()
+                db_latest = traffic.groupby("road_id")["collected_at_wib"].max()
+
+                # Merge database stats with roads-based defaults
+                self.historical_lookup = db_lookup
+                for r_id, val in db_mean.items():
+                    self.road_mean_speed[str(r_id)] = float(val)
+                self.latest_timestamp_by_road = db_latest
+            except Exception as e:
+                self.app_logger.error("historical_data_processing_failed", extra={"error": str(e)})
+
+        # 5. Initialize the Fallback Predictor with fully resolved profiles
         self.fallback_predictor = FallbackPredictor(
             historical_lookup=self.historical_lookup,
             road_mean_speed=self.road_mean_speed,
         )
+
 
     def _road_record(self, road_id: str) -> dict:
         matches = self.roads[self.roads["road_id"].astype(str) == str(road_id)] if self.roads is not None else pd.DataFrame()
