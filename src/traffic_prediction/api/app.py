@@ -630,7 +630,7 @@ class AppState:
     def restore_live_buffer(self) -> None:
         if self.db is not None:
             try:
-                records = self.db.latest_live_records(limit=1000)
+                records = self.db.latest_live_records(limit=5000)
                 if records:
                     self.live_buffer.append_many(records)
                     self.buffer_available = bool(self.live_buffer.buffers)

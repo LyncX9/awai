@@ -528,74 +528,121 @@ async function fetchGeneralMetrics() {
 }
 
 // Batch predictions to color-code the map network flow
-// Uses /roads/live for ACTUAL current speeds (accurate coloring) + /predict/batch for forecast stats
+// Prioritizes Prediction for coloring, while also showing Live speed for monitoring
 async function refreshNetworkPredictions() {
     if (roadsData.length === 0) return;
     
     try {
-        // ---- 1. Fetch LIVE current speeds (source of truth for map colors & badges) ----
+        // Fetch 15-min predictions (Primary focus)
+        const predRes = await fetchWithAuth(`${API_URL}/predict/batch`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ horizon_minutes: 15 })
+        });
+        
+        let predData = {};
+        if (predRes.ok) {
+            predData = await predRes.json();
+        }
+        
+        // Fetch LIVE speeds (for side-by-side monitoring)
         const liveRes = await fetchWithAuth(`${API_URL}/roads/live`);
+        let liveData = [];
         if (liveRes.ok) {
-            const liveData = await liveRes.json();
+            liveData = await liveRes.json();
+        }
+        
+        // Map live data for easy lookup
+        const liveMap = {};
+        liveData.forEach(item => {
+            liveMap[item.road_id] = item;
+        });
+        
+        let totalSpeed = 0;
+        let activeCongestedCount = 0;
+        let successCount = 0;
+        
+        // Process based on prediction data (or fallback to live if prediction missing)
+        Object.keys(predData).forEach(roadId => {
+            const pred = predData[roadId];
+            const live = liveMap[roadId];
+            const poly = polylines[roadId];
             
-            let totalSpeed = 0;
-            let activeCongestedCount = 0;
-            let successCount = 0;
+            // Prioritize Prediction for display and classification
+            const predictedSpeed = pred.predicted_speed;
+            const freeFlow = pred.free_flow_speed || 35.0;
+            const speedRatio = predictedSpeed / freeFlow;
             
-            liveData.forEach(item => {
-                const roadId = item.road_id;
-                const speed = item.current_speed;
-                const cong = item.current_congestion_level || 'free_flow';
-                const poly = polylines[roadId];
-                
-                // Color based on ACTUAL current congestion
-                let strokeColor = 'var(--color-green)';
-                let dotClass = 'green';
-                if (cong === 'congested' || cong === 'severe') {
-                    strokeColor = 'var(--color-red)';
-                    dotClass = 'red';
-                    if (poly) activeCongestedCount++;
-                } else if (cong === 'moderate') {
-                    strokeColor = 'var(--color-amber)';
-                    dotClass = 'amber';
-                }
-
-                const roadObj = roadsData.find(r => r.road_id === roadId);
-                const roadName = roadObj ? roadObj.road_name : 'Segment';
-                const stallBadge = item.is_stale ? ` <span style="color: var(--color-amber)">⚠ stale</span>` : '';
-                
-                if (poly) {
-                    totalSpeed += speed;
-                    successCount++;
-                    poly.setStyle({ color: strokeColor });
-                    poly.bindTooltip(`
-                        <div class="map-tooltip-content">
-                            <strong>${roadName}</strong><br/>
-                            <span style="font-size: 0.75rem; color: var(--text-secondary)">ID: ${roadId}</span><br/>
-                            <span style="color: ${strokeColor}; font-weight: bold; font-size: 0.85rem;">
-                                Now: ${speed.toFixed(1)} km/h (${cong.replace('_', ' ')})
-                            </span>${stallBadge}
-                        </div>
-                    `, { sticky: true });
-                }
-
-                // Update road list badge & dot color with actual current speed
-                const dot = document.getElementById(`dot-${roadId}`);
-                const badge = document.getElementById(`speed-badge-${roadId}`);
-                if (dot) dot.className = `road-item-dot ${dotClass}`;
-                if (badge) {
-                    badge.innerHTML = `<span>${speed.toFixed(1)}</span><span class="speed-unit-small">km/h</span>`;
-                    badge.style.color = strokeColor;
-                }
-            });
+            let cong = 'free_flow';
+            let strokeColor = 'var(--color-green)';
+            let dotClass = 'green';
+            let congText = 'Free Flow';
             
-            if (successCount > 0) {
-                const avgSpeed = (totalSpeed / successCount).toFixed(1);
-                docElements.valAvgSpeed.innerText = avgSpeed;
-                docElements.valCongestedRoads.innerText = activeCongestedCount;
-                const pctCongested = ((activeCongestedCount / successCount) * 100).toFixed(0);
-                docElements.txtCongestedPercentage.innerText = `${pctCongested}% of ${successCount} segments`;
+            if (speedRatio < 0.40) {
+                cong = 'severe';
+                strokeColor = 'var(--color-red)';
+                dotClass = 'red';
+                congText = 'Severe Congestion';
+            } else if (speedRatio < 0.60) {
+                cong = 'congested';
+                strokeColor = 'var(--color-red)';
+                dotClass = 'red';
+                congText = 'Congested';
+            } else if (speedRatio < 0.75) {
+                cong = 'moderate';
+                strokeColor = 'var(--color-amber)';
+                dotClass = 'amber';
+                congText = 'Moderate Flow';
             }
+            
+            if (cong === 'congested' || cong === 'severe') {
+                if (poly) activeCongestedCount++;
+            }
+            
+            const roadObj = roadsData.find(r => r.road_id === roadId);
+            const roadName = roadObj ? roadObj.road_name : 'Segment';
+            
+            const currentSpeedStr = live ? `${live.current_speed.toFixed(1)} km/h` : 'N/A';
+            const stallBadge = (live && live.is_stale) ? ` <span style="color: var(--color-amber)">⚠ stale</span>` : '';
+            
+            if (poly) {
+                totalSpeed += predictedSpeed;
+                successCount++;
+                poly.setStyle({ color: strokeColor });
+                poly.bindTooltip(`
+                    <div class="map-tooltip-content">
+                        <strong>${roadName}</strong><br/>
+                        <span style="font-size: 0.75rem; color: var(--text-secondary)">ID: ${roadId}</span><br/>
+                        <div style="margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(255,255,255,0.1);">
+                            <span style="color: ${strokeColor}; font-weight: bold; font-size: 0.85rem;">
+                                Pred (+15m): ${predictedSpeed.toFixed(1)} km/h (${congText})
+                            </span><br/>
+                            <span style="color: var(--text-muted); font-size: 0.8rem;">
+                                Live: ${currentSpeedStr}${stallBadge}
+                            </span>
+                        </div>
+                    </div>
+                `, { sticky: true });
+            }
+
+            // Update road list badge & dot color with PREDICTED speed
+            const dot = document.getElementById(`dot-${roadId}`);
+            const badge = document.getElementById(`speed-badge-${roadId}`);
+            if (dot) dot.className = `road-item-dot ${dotClass}`;
+            if (badge) {
+                badge.innerHTML = `<span>${predictedSpeed.toFixed(1)}</span><span class="speed-unit-small">km/h</span>`;
+                badge.style.color = strokeColor;
+                // Add a small tooltip to indicate this is prediction
+                badge.title = `Predicted speed (+15m). Live speed: ${currentSpeedStr}`;
+            }
+        });
+        
+        if (successCount > 0) {
+            const avgSpeed = (totalSpeed / successCount).toFixed(1);
+            docElements.valAvgSpeed.innerText = avgSpeed;
+            docElements.valCongestedRoads.innerText = activeCongestedCount;
+            const pctCongested = ((activeCongestedCount / successCount) * 100).toFixed(0);
+            docElements.txtCongestedPercentage.innerText = `${pctCongested}% of ${successCount} segments`;
         }
         
     } catch (err) {
@@ -694,15 +741,15 @@ async function refreshSegmentDetails(roadId) {
             }
         });
         
-        // 2. Derive current speed: use actual current_speed from backend (live buffer), fall back to prediction
+        // 2. Prioritize PREDICTED speed for the main display, and show LIVE speed as secondary
         const pred15 = forecasts[15];
-        let currentSpeedVal = pred15?.current_speed ?? pred15?.predicted_speed ?? 35.0;
+        let displaySpeedVal = pred15?.predicted_speed ?? 35.0;
+        let liveSpeedVal = pred15?.current_speed;
         let confidenceScore = pred15?.confidence_score ?? 0.95;
         const freeFlowSpeed = pred15?.free_flow_speed ?? roadObj.free_flow_speed ?? 35.0;
-        const hasTrueCurrentSpeed = pred15?.current_speed != null;
         
-        // 3. Classify based on ACTUAL current speed (not prediction)
-        const speedRatio = currentSpeedVal / freeFlowSpeed;
+        // 3. Classify based on PREDICTED speed
+        const speedRatio = displaySpeedVal / freeFlowSpeed;
         let segmentCong = 'free';
         let segmentText = 'Free Flow';
         let ringColor = 'var(--color-green)';
@@ -721,20 +768,25 @@ async function refreshSegmentDetails(roadId) {
             ringColor = 'var(--color-amber)';
         }
         
-        // 4. Update current speed ring display
-        docElements.segmentCurrentSpeed.innerText = currentSpeedVal.toFixed(1);
+        // 4. Update current speed ring display (showing Predicted speed)
+        docElements.segmentCurrentSpeed.innerText = displaySpeedVal.toFixed(1);
         
         // Show data source indicator under the speed value
         const sourceLabel = document.getElementById('segment-speed-source');
         if (sourceLabel) {
-            sourceLabel.innerText = hasTrueCurrentSpeed ? 'Live Speed' : 'Fallback Estimate';
-            sourceLabel.style.color = hasTrueCurrentSpeed ? 'var(--color-green)' : 'var(--color-amber)';
+            // Emphasize that this is a prediction!
+            sourceLabel.innerText = 'Pred (+15m)';
+            sourceLabel.style.color = 'var(--color-blue)';
         }
         
         const pctConf = (confidenceScore * 100).toFixed(0);
         docElements.segmentConfidence.innerText = `${pctConf}%`;
         docElements.segmentConfidenceBar.style.width = `${pctConf}%`;
-        docElements.segmentLastUpdate.innerText = hasTrueCurrentSpeed ? 'Live from TomTom' : 'Estimated';
+        
+        // If we have actual live speed, show it in the last update field or similar
+        docElements.segmentLastUpdate.innerText = liveSpeedVal != null 
+            ? `Live: ${liveSpeedVal.toFixed(1)} km/h` 
+            : 'Estimated Base';
         
         // 5. Set congestion badge & ring color
         const badge = docElements.segmentCongestion;
