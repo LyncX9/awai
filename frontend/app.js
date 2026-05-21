@@ -655,14 +655,14 @@ async function refreshNetworkPredictions() {
                 `, { sticky: true, className: 'custom-tooltip' });
             }
 
-            // Sidebar road list: tampilkan kecepatan prediksi
+            // Sidebar road list: tampilkan kecepatan aktual
             const dot = document.getElementById(`dot-${roadId}`);
             const badge = document.getElementById(`speed-badge-${roadId}`);
             if (dot) dot.className = `road-item-dot ${dotClass}`;
             if (badge) {
-                badge.innerHTML = `<span>${predictedSpeed.toFixed(1)}</span><span class="speed-unit-small">km/h</span>`;
+                badge.innerHTML = `<span>${actualSpeed.toFixed(1)}</span><span class="speed-unit-small">km/h</span>`;
                 badge.style.color = strokeColor;
-                badge.title = `[${methodBadge}] Pred +15m: ${predictedSpeed.toFixed(1)} km/h | Live: ${liveSpeedStr}`;
+                badge.title = `Live: ${liveSpeedStr} | Pred +15m: ${predictedSpeed.toFixed(1)} km/h [${methodBadge}]`;
             }
         });
         
