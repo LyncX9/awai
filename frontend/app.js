@@ -511,15 +511,27 @@ async function fetchGeneralMetrics() {
         
         const data = await res.json();
         
-        // Update general dashboard cards
-        docElements.valAvgSpeed.innerText = data.buffer_average_fill_rate > 0 ? "38.6" : "--"; // Fallback demo value if not active
-        docElements.txtSpeedTrend.innerText = `Uptime: ${(data.uptime_seconds / 3600).toFixed(1)} hrs | Cache size: ${data.prediction_cache_size}`;
+        // Uptime info
+        const uptimeHrs = (data.uptime_seconds / 3600).toFixed(1);
+        docElements.txtSpeedTrend.innerText = `Uptime: ${uptimeHrs} hrs | Buffer: ${(data.buffer_average_fill_rate * 100).toFixed(0)}%`;
         
-        docElements.valPredMode.innerText = data.model_loaded ? "LSTM Active" : "Fallback";
-        docElements.txtPredCache.innerText = `Prediction Mode: ${data.model_version || 'None'}`;
+        // Prediction mode: lebih detail
+        if (data.model_loaded) {
+            docElements.valPredMode.innerText = 'LSTM Active';
+            docElements.valPredMode.style.color = 'var(--color-green)';
+        } else {
+            docElements.valPredMode.innerText = 'Fallback';
+            docElements.valPredMode.style.color = 'var(--color-amber)';
+        }
+        docElements.txtPredCache.innerText = `v${data.model_version || 'N/A'} | Cache: ${data.prediction_cache_size} entries`;
         
+        // Data quality
         if (data.data_quality_status) {
-            docElements.txtQualityStatus.innerText = `Status: ${data.data_quality_status.toUpperCase()}`;
+            const statusUpper = data.data_quality_status.toUpperCase();
+            docElements.txtQualityStatus.innerText = `Status: ${statusUpper}`;
+            if (docElements.valQualityScore) {
+                docElements.valQualityScore.innerText = data.data_quality_score != null ? (data.data_quality_score * 100).toFixed(0) : '--';
+            }
         }
         
     } catch (err) {
@@ -528,121 +540,141 @@ async function fetchGeneralMetrics() {
 }
 
 // Batch predictions to color-code the map network flow
-// Prioritizes Prediction for coloring, while also showing Live speed for monitoring
+// Model prediksi LSTM adalah sumber utama; live speed ditampilkan sebagai data pendamping
 async function refreshNetworkPredictions() {
     if (roadsData.length === 0) return;
     
     try {
-        // Fetch 15-min predictions (Primary focus)
+        // ---- 1. Build correct PredictionBatchRequest format ----
+        // Backend expects: { predictions: [{road_id, horizon_minutes}, ...] }
+        const batchPayload = {
+            predictions: roadsData.map(r => ({
+                road_id: r.road_id,
+                horizon_minutes: 15
+            }))
+        };
+
         const predRes = await fetchWithAuth(`${API_URL}/predict/batch`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ horizon_minutes: 15 })
+            body: JSON.stringify(batchPayload)
         });
         
-        let predData = {};
-        if (predRes.ok) {
-            predData = await predRes.json();
+        // ---- 2. Parse PredictionBatchResponse correctly ----
+        // Backend returns: { predictions: [...], successful_count, failed_count, ... }
+        // Convert to map {road_id -> prediction} for easy lookup
+        let predMap = {};
+        if (predRes.ok || predRes.status === 206) {
+            const batchResp = await predRes.json();
+            if (batchResp.predictions && Array.isArray(batchResp.predictions)) {
+                batchResp.predictions.forEach(p => {
+                    predMap[p.road_id] = p;
+                });
+            }
         }
         
-        // Fetch LIVE speeds (for side-by-side monitoring)
+        // ---- 3. Fetch LIVE speeds (monitoring pendamping, bukan sumber utama) ----
         const liveRes = await fetchWithAuth(`${API_URL}/roads/live`);
-        let liveData = [];
+        let liveMap = {};
         if (liveRes.ok) {
-            liveData = await liveRes.json();
+            const liveData = await liveRes.json();
+            liveData.forEach(item => { liveMap[item.road_id] = item; });
         }
         
-        // Map live data for easy lookup
-        const liveMap = {};
-        liveData.forEach(item => {
-            liveMap[item.road_id] = item;
-        });
-        
-        let totalSpeed = 0;
+        let totalPredSpeed = 0;
         let activeCongestedCount = 0;
         let successCount = 0;
+        let lstmCount = 0;
+        let fallbackCount = 0;
         
-        // Process based on prediction data (or fallback to live if prediction missing)
-        Object.keys(predData).forEach(roadId => {
-            const pred = predData[roadId];
+        // ---- 4. Update map berdasarkan hasil prediksi ----
+        roadsData.forEach(road => {
+            const roadId = road.road_id;
+            const pred = predMap[roadId];
             const live = liveMap[roadId];
             const poly = polylines[roadId];
             
-            // Prioritize Prediction for display and classification
-            const predictedSpeed = pred.predicted_speed;
-            const freeFlow = pred.free_flow_speed || 35.0;
-            const speedRatio = predictedSpeed / freeFlow;
+            if (!pred) return; // skip jika prediksi gagal untuk road ini
             
-            let cong = 'free_flow';
+            const predictedSpeed = pred.predicted_speed;
+            const freeFlow = pred.free_flow_speed || road.free_flow_speed || 35.0;
+            const speedRatio = predictedSpeed / freeFlow;
+            const predMethod = pred.prediction_method || '';
+            const isLSTM = predMethod === 'live_lstm_runtime';
+            
+            if (isLSTM) lstmCount++; else fallbackCount++;
+            
+            // Klasifikasi berdasarkan prediksi
             let strokeColor = 'var(--color-green)';
             let dotClass = 'green';
             let congText = 'Free Flow';
+            let isCongested = false;
             
             if (speedRatio < 0.40) {
-                cong = 'severe';
-                strokeColor = 'var(--color-red)';
-                dotClass = 'red';
-                congText = 'Severe Congestion';
+                strokeColor = 'var(--color-red)'; dotClass = 'red';
+                congText = 'Severe Congestion'; isCongested = true;
             } else if (speedRatio < 0.60) {
-                cong = 'congested';
-                strokeColor = 'var(--color-red)';
-                dotClass = 'red';
-                congText = 'Congested';
+                strokeColor = 'var(--color-red)'; dotClass = 'red';
+                congText = 'Congested'; isCongested = true;
             } else if (speedRatio < 0.75) {
-                cong = 'moderate';
-                strokeColor = 'var(--color-amber)';
-                dotClass = 'amber';
-                congText = 'Moderate Flow';
+                strokeColor = 'var(--color-amber)'; dotClass = 'amber';
+                congText = 'Moderate';
             }
             
-            if (cong === 'congested' || cong === 'severe') {
-                if (poly) activeCongestedCount++;
-            }
+            if (isCongested && poly) activeCongestedCount++;
             
-            const roadObj = roadsData.find(r => r.road_id === roadId);
-            const roadName = roadObj ? roadObj.road_name : 'Segment';
-            
-            const currentSpeedStr = live ? `${live.current_speed.toFixed(1)} km/h` : 'N/A';
-            const stallBadge = (live && live.is_stale) ? ` <span style="color: var(--color-amber)">⚠ stale</span>` : '';
+            const roadName = road.road_name || roadId;
+            const liveSpeedStr = live ? `${live.current_speed.toFixed(1)} km/h` : 'N/A';
+            const staleBadge = (live && live.is_stale) ? ` ⚠` : '';
+            const methodBadge = isLSTM ? '🧠 LSTM' : '📊 Est.';
             
             if (poly) {
-                totalSpeed += predictedSpeed;
+                totalPredSpeed += predictedSpeed;
                 successCount++;
-                poly.setStyle({ color: strokeColor });
+                poly.setStyle({ color: strokeColor, weight: selectedRoadId === roadId ? 8 : 5 });
                 poly.bindTooltip(`
                     <div class="map-tooltip-content">
-                        <strong>${roadName}</strong><br/>
-                        <span style="font-size: 0.75rem; color: var(--text-secondary)">ID: ${roadId}</span><br/>
-                        <div style="margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(255,255,255,0.1);">
-                            <span style="color: ${strokeColor}; font-weight: bold; font-size: 0.85rem;">
-                                Pred (+15m): ${predictedSpeed.toFixed(1)} km/h (${congText})
-                            </span><br/>
-                            <span style="color: var(--text-muted); font-size: 0.8rem;">
-                                Live: ${currentSpeedStr}${stallBadge}
+                        <strong>${roadName}</strong>
+                        <span style="font-size:0.7rem;color:var(--text-secondary);margin-left:4px">${roadId}</span><br/>
+                        <div style="margin-top:5px;display:flex;flex-direction:column;gap:3px">
+                            <span style="color:${strokeColor};font-weight:700;font-size:0.9rem">
+                                Pred +15m: ${predictedSpeed.toFixed(1)} km/h
+                            </span>
+                            <span style="font-size:0.78rem;color:var(--text-secondary)">${congText} &nbsp;•&nbsp; ${methodBadge}</span>
+                            <span style="font-size:0.75rem;color:var(--text-muted)">
+                                Live now: ${liveSpeedStr}${staleBadge}
                             </span>
                         </div>
                     </div>
-                `, { sticky: true });
+                `, { sticky: true, className: 'custom-tooltip' });
             }
 
-            // Update road list badge & dot color with PREDICTED speed
+            // Sidebar road list: tampilkan kecepatan prediksi
             const dot = document.getElementById(`dot-${roadId}`);
             const badge = document.getElementById(`speed-badge-${roadId}`);
             if (dot) dot.className = `road-item-dot ${dotClass}`;
             if (badge) {
                 badge.innerHTML = `<span>${predictedSpeed.toFixed(1)}</span><span class="speed-unit-small">km/h</span>`;
                 badge.style.color = strokeColor;
-                // Add a small tooltip to indicate this is prediction
-                badge.title = `Predicted speed (+15m). Live speed: ${currentSpeedStr}`;
+                badge.title = `[${methodBadge}] Pred +15m: ${predictedSpeed.toFixed(1)} km/h | Live: ${liveSpeedStr}`;
             }
         });
         
+        // ---- 5. Update dashboard stats ----
         if (successCount > 0) {
-            const avgSpeed = (totalSpeed / successCount).toFixed(1);
-            docElements.valAvgSpeed.innerText = avgSpeed;
+            const avgPred = (totalPredSpeed / successCount).toFixed(1);
+            docElements.valAvgSpeed.innerText = avgPred;
             docElements.valCongestedRoads.innerText = activeCongestedCount;
             const pctCongested = ((activeCongestedCount / successCount) * 100).toFixed(0);
             docElements.txtCongestedPercentage.innerText = `${pctCongested}% of ${successCount} segments`;
+        }
+
+        // Update prediction mode display
+        const totalPred = lstmCount + fallbackCount;
+        if (totalPred > 0) {
+            const lstmPct = Math.round((lstmCount / totalPred) * 100);
+            docElements.valPredMode.innerText = lstmCount > 0 ? `LSTM ${lstmPct}%` : 'Fallback';
+            docElements.txtPredCache.innerText = `${lstmCount} LSTM · ${fallbackCount} Fallback dari ${totalPred} jalan`;
         }
         
     } catch (err) {
@@ -772,11 +804,12 @@ async function refreshSegmentDetails(roadId) {
         docElements.segmentCurrentSpeed.innerText = displaySpeedVal.toFixed(1);
         
         // Show data source indicator under the speed value
+        const predMethod15 = pred15?.prediction_method || '';
+        const isLSTM15 = predMethod15 === 'live_lstm_runtime';
         const sourceLabel = document.getElementById('segment-speed-source');
         if (sourceLabel) {
-            // Emphasize that this is a prediction!
-            sourceLabel.innerText = 'Pred (+15m)';
-            sourceLabel.style.color = 'var(--color-blue)';
+            sourceLabel.innerText = isLSTM15 ? '🧠 LSTM +15m' : '📊 Est. +15m';
+            sourceLabel.style.color = isLSTM15 ? 'var(--color-blue)' : 'var(--color-amber)';
         }
         
         const pctConf = (confidenceScore * 100).toFixed(0);
@@ -814,14 +847,15 @@ async function refreshSegmentDetails(roadId) {
                 yUpperList.push(details.uncertainty_upper);
             } else {
                 summaryVal.innerText = '--';
-                yPredList.push(currentSpeedVal);
-                yLowerList.push(currentSpeedVal * 0.8);
-                yUpperList.push(currentSpeedVal * 1.2);
+                const fallbackSpeed = liveSpeedVal ?? displaySpeedVal;
+                yPredList.push(fallbackSpeed);
+                yLowerList.push(fallbackSpeed * 0.8);
+                yUpperList.push(fallbackSpeed * 1.2);
             }
         });
         
-        // Re-draw forecast chart with current speed as baseline reference
-        renderForecastChart(labelsList, yPredList, yLowerList, yUpperList, currentSpeedVal);
+        // Re-draw forecast chart with live speed as baseline reference (garis putus-putus)
+        renderForecastChart(labelsList, yPredList, yLowerList, yUpperList, liveSpeedVal);
         
     } catch (err) {
         console.error("Failed to load segment specifics:", err);
