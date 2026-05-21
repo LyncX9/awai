@@ -614,15 +614,14 @@ async function refreshNetworkPredictions() {
             let congText = 'Free Flow';
             let isCongested = false;
             
-            // Perbaiki threshold agar tidak over-sensitive (misal jam 12 malam tetap free flow)
-            if (speedRatio < 0.40) {
-                strokeColor = 'var(--color-red)'; dotClass = 'red';
+            // Threshold lebih akurat: < 0.30 Severe, < 0.50 Congested, < 0.75 Moderate
+            if (speedRatio < 0.30) {
+                strokeColor = 'var(--color-dark-red)'; dotClass = 'dark-red';
                 congText = 'Severe Congestion'; isCongested = true;
-            } else if (speedRatio < 0.60) {
+            } else if (speedRatio < 0.50) {
                 strokeColor = 'var(--color-red)'; dotClass = 'red';
                 congText = 'Congested'; isCongested = true;
-            } else if (speedRatio < 0.80) { // Naikkan ke 0.80 agar speed 26/35 (0.74) tetap masuk Moderate atau Free Flow (kita buat < 0.75 Moderate, tunggu, kita jadikan < 0.75 Moderate, atau < 0.70? Mari kita gunakan 0.75 tapi pastikan actualSpeed nya tinggi)
-                // Kita gunakan 0.75 untuk Moderate
+            } else if (speedRatio < 0.75) {
                 strokeColor = 'var(--color-amber)'; dotClass = 'amber';
                 congText = 'Moderate';
             }

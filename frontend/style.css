@@ -19,6 +19,8 @@
     --color-amber: #f59e0b;
     --color-amber-glow: rgba(245, 158, 11, 0.25);
     --color-red: #ef4444;
+    --color-dark-red: #991b1b;
+    --color-dark-red-glow: rgba(153, 27, 27, 0.4);
     --color-red-glow: rgba(239, 68, 68, 0.25);
     
     --font-heading: 'Outfit', -apple-system, sans-serif;
@@ -508,6 +510,7 @@ body {
 .legend-dot.green { background-color: var(--color-green); box-shadow: 0 0 6px var(--color-green); }
 .legend-dot.amber { background-color: var(--color-amber); box-shadow: 0 0 6px var(--color-amber); }
 .legend-dot.red { background-color: var(--color-red); box-shadow: 0 0 6px var(--color-red); }
+.legend-dot.dark-red { background-color: var(--color-dark-red); box-shadow: 0 0 6px var(--color-dark-red); }
 
 .map-frame {
     flex-grow: 1;
