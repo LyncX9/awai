@@ -598,25 +598,31 @@ async function refreshNetworkPredictions() {
             
             const predictedSpeed = pred.predicted_speed;
             const freeFlow = pred.free_flow_speed || road.free_flow_speed || 35.0;
-            const speedRatio = predictedSpeed / freeFlow;
+            
+            // Prioritaskan current_speed untuk monitoring aktual, gunakan prediksi jika current tidak ada
+            const actualSpeed = (live && live.current_speed) ? live.current_speed : predictedSpeed;
+            const speedRatio = actualSpeed / freeFlow;
+            
             const predMethod = pred.prediction_method || '';
             const isLSTM = predMethod === 'live_lstm_runtime';
             
             if (isLSTM) lstmCount++; else fallbackCount++;
             
-            // Klasifikasi berdasarkan prediksi
+            // Klasifikasi berdasarkan speed aktual (monitoring)
             let strokeColor = 'var(--color-green)';
             let dotClass = 'green';
             let congText = 'Free Flow';
             let isCongested = false;
             
+            // Perbaiki threshold agar tidak over-sensitive (misal jam 12 malam tetap free flow)
             if (speedRatio < 0.40) {
                 strokeColor = 'var(--color-red)'; dotClass = 'red';
                 congText = 'Severe Congestion'; isCongested = true;
             } else if (speedRatio < 0.60) {
                 strokeColor = 'var(--color-red)'; dotClass = 'red';
                 congText = 'Congested'; isCongested = true;
-            } else if (speedRatio < 0.75) {
+            } else if (speedRatio < 0.80) { // Naikkan ke 0.80 agar speed 26/35 (0.74) tetap masuk Moderate atau Free Flow (kita buat < 0.75 Moderate, tunggu, kita jadikan < 0.75 Moderate, atau < 0.70? Mari kita gunakan 0.75 tapi pastikan actualSpeed nya tinggi)
+                // Kita gunakan 0.75 untuk Moderate
                 strokeColor = 'var(--color-amber)'; dotClass = 'amber';
                 congText = 'Moderate';
             }
@@ -638,11 +644,11 @@ async function refreshNetworkPredictions() {
                         <span style="font-size:0.7rem;color:var(--text-secondary);margin-left:4px">${roadId}</span><br/>
                         <div style="margin-top:5px;display:flex;flex-direction:column;gap:3px">
                             <span style="color:${strokeColor};font-weight:700;font-size:0.9rem">
-                                Pred +15m: ${predictedSpeed.toFixed(1)} km/h
-                            </span>
-                            <span style="font-size:0.78rem;color:var(--text-secondary)">${congText} &nbsp;•&nbsp; ${methodBadge}</span>
-                            <span style="font-size:0.75rem;color:var(--text-muted)">
                                 Live now: ${liveSpeedStr}${staleBadge}
+                            </span>
+                            <span style="font-size:0.78rem;color:var(--text-secondary)">${congText}</span>
+                            <span style="font-size:0.75rem;color:var(--text-muted)">
+                                Pred +15m: ${predictedSpeed.toFixed(1)} km/h &nbsp;•&nbsp; ${methodBadge}
                             </span>
                         </div>
                     </div>
@@ -773,15 +779,17 @@ async function refreshSegmentDetails(roadId) {
             }
         });
         
-        // 2. Prioritize PREDICTED speed for the main display, and show LIVE speed as secondary
+        // 2. Prioritize LIVE speed for the main display ring (monitoring aktual), and show PREDICTED speed as secondary
         const pred15 = forecasts[15];
-        let displaySpeedVal = pred15?.predicted_speed ?? 35.0;
         let liveSpeedVal = pred15?.current_speed;
+        let displaySpeedVal = pred15?.predicted_speed ?? 35.0;
         let confidenceScore = pred15?.confidence_score ?? 0.95;
         const freeFlowSpeed = pred15?.free_flow_speed ?? roadObj.free_flow_speed ?? 35.0;
         
-        // 3. Classify based on PREDICTED speed
-        const speedRatio = displaySpeedVal / freeFlowSpeed;
+        // 3. Classify berdasarkan LIVE speed untuk monitoring yang aktual
+        const actualSpeed = liveSpeedVal != null ? liveSpeedVal : displaySpeedVal;
+        const speedRatio = actualSpeed / freeFlowSpeed;
+        
         let segmentCong = 'free';
         let segmentText = 'Free Flow';
         let ringColor = 'var(--color-green)';
@@ -794,32 +802,32 @@ async function refreshSegmentDetails(roadId) {
             segmentCong = 'congested';
             segmentText = 'Congested';
             ringColor = 'var(--color-red)';
-        } else if (speedRatio < 0.75) {
+        } else if (speedRatio < 0.80) { // Naikkan threshold ke 0.80 agar lebih toleran
             segmentCong = 'moderate';
             segmentText = 'Moderate Flow';
             ringColor = 'var(--color-amber)';
         }
         
-        // 4. Update current speed ring display (showing Predicted speed)
-        docElements.segmentCurrentSpeed.innerText = displaySpeedVal.toFixed(1);
+        // 4. Update current speed ring display (showing LIVE speed)
+        docElements.segmentCurrentSpeed.innerText = actualSpeed.toFixed(1);
         
         // Show data source indicator under the speed value
         const predMethod15 = pred15?.prediction_method || '';
         const isLSTM15 = predMethod15 === 'live_lstm_runtime';
         const sourceLabel = document.getElementById('segment-speed-source');
         if (sourceLabel) {
-            sourceLabel.innerText = isLSTM15 ? '🧠 LSTM +15m' : '📊 Est. +15m';
-            sourceLabel.style.color = isLSTM15 ? 'var(--color-blue)' : 'var(--color-amber)';
+            sourceLabel.innerText = liveSpeedVal != null ? 'Live Speed' : 'Estimated Base';
+            sourceLabel.style.color = liveSpeedVal != null ? 'var(--text-primary)' : 'var(--color-amber)';
         }
         
         const pctConf = (confidenceScore * 100).toFixed(0);
         docElements.segmentConfidence.innerText = `${pctConf}%`;
         docElements.segmentConfidenceBar.style.width = `${pctConf}%`;
         
-        // If we have actual live speed, show it in the last update field or similar
-        docElements.segmentLastUpdate.innerText = liveSpeedVal != null 
-            ? `Live: ${liveSpeedVal.toFixed(1)} km/h` 
-            : 'Estimated Base';
+        // Tampilkan Prediksi di last update field
+        docElements.segmentLastUpdate.innerText = isLSTM15 
+            ? `Pred +15m: ${displaySpeedVal.toFixed(1)} km/h` 
+            : 'Pred: N/A';
         
         // 5. Set congestion badge & ring color
         const badge = docElements.segmentCongestion;
