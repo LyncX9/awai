@@ -581,7 +581,7 @@ async function refreshNetworkPredictions() {
             liveData.forEach(item => { liveMap[item.road_id] = item; });
         }
         
-        let totalPredSpeed = 0;
+        let totalActualSpeed = 0;
         let activeCongestedCount = 0;
         let successCount = 0;
         let lstmCount = 0;
@@ -634,7 +634,7 @@ async function refreshNetworkPredictions() {
             const methodBadge = isLSTM ? '🧠 LSTM' : '📊 Est.';
             
             if (poly) {
-                totalPredSpeed += predictedSpeed;
+                totalActualSpeed += actualSpeed;
                 successCount++;
                 poly.setStyle({ color: strokeColor, weight: selectedRoadId === roadId ? 8 : 5 });
                 poly.bindTooltip(`
@@ -667,8 +667,8 @@ async function refreshNetworkPredictions() {
         
         // ---- 5. Update dashboard stats ----
         if (successCount > 0) {
-            const avgPred = (totalPredSpeed / successCount).toFixed(1);
-            docElements.valAvgSpeed.innerText = avgPred;
+            const avgActual = (totalActualSpeed / successCount).toFixed(1);
+            docElements.valAvgSpeed.innerText = avgActual;
             docElements.valCongestedRoads.innerText = activeCongestedCount;
             const pctCongested = ((activeCongestedCount / successCount) * 100).toFixed(0);
             docElements.txtCongestedPercentage.innerText = `${pctCongested}% of ${successCount} segments`;
