@@ -130,13 +130,15 @@ document.addEventListener('DOMContentLoaded', () => {
     docElements.formManualIngest.addEventListener('submit', handleManualIngest);
     docElements.btnDemoIngest.addEventListener('click', handleDemoNetworkIngest);
 
-    // Horizon Selector
-    if (docElements.horizonBtns) {
-        docElements.horizonBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                docElements.horizonBtns.forEach(b => b.classList.remove('active'));
-                e.target.classList.add('active');
-                currentSelectedHorizon = e.target.getAttribute('data-horizon');
+    // Horizon Selector via Forecast Cards
+    const horizonCards = document.querySelectorAll('.pred-summary-card.horizon-btn');
+    if (horizonCards.length > 0) {
+        horizonCards.forEach(card => {
+            card.addEventListener('click', (e) => {
+                const targetCard = e.currentTarget;
+                horizonCards.forEach(c => c.classList.remove('active'));
+                targetCard.classList.add('active');
+                currentSelectedHorizon = targetCard.getAttribute('data-horizon');
                 if (activeSegmentData) {
                     renderHorizonDetails();
                 }

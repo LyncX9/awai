@@ -19,13 +19,13 @@
     <!-- Chart.js for High-Fidelity Predictions -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <script src="app.js?v=1.2.2" defer></script>
+    <script src="app.js?v=1.2.3" defer></script>
     
     <!-- Lucide Icons CDN -->
     <script src="https://unpkg.com/lucide@latest"></script>
     
     <!-- Custom Style Sheet -->
-    <link rel="stylesheet" href="style.css?v=1.1.1">
+    <link rel="stylesheet" href="style.css?v=1.1.2">
 </head>
 <body>
     <div class="app-container">
@@ -214,14 +214,6 @@
                                 <span class="segment-id-badge" id="segment-id">SBM_JAY_01</span>
                             </div>
                             
-                            <!-- Dynamic Horizon Selector -->
-                            <div class="horizon-selector" id="horizon-selector">
-                                <button class="horizon-btn active" data-horizon="now">Now</button>
-                                <button class="horizon-btn" data-horizon="15">+15m</button>
-                                <button class="horizon-btn" data-horizon="30">+30m</button>
-                                <button class="horizon-btn" data-horizon="45">+45m</button>
-                                <button class="horizon-btn" data-horizon="60">+60m</button>
-                            </div>
 
                             
                             <!-- Speed and Confidence row -->
@@ -269,20 +261,24 @@
                                     <canvas id="forecastChart"></canvas>
                                 </div>
                                 <div class="predictions-summary-grid">
-                                    <div class="pred-summary-card">
-                                        <label>15-Min</label>
+                                    <div class="pred-summary-card horizon-btn active" data-horizon="now">
+                                        <label>LIVE</label>
+                                        <span class="val" id="pred-now">--</span>
+                                    </div>
+                                    <div class="pred-summary-card horizon-btn" data-horizon="15">
+                                        <label>15-MIN</label>
                                         <span class="val" id="pred-15m">--</span>
                                     </div>
-                                    <div class="pred-summary-card">
-                                        <label>30-Min</label>
+                                    <div class="pred-summary-card horizon-btn" data-horizon="30">
+                                        <label>30-MIN</label>
                                         <span class="val" id="pred-30m">--</span>
                                     </div>
-                                    <div class="pred-summary-card">
-                                        <label>45-Min</label>
+                                    <div class="pred-summary-card horizon-btn" data-horizon="45">
+                                        <label>45-MIN</label>
                                         <span class="val" id="pred-45m">--</span>
                                     </div>
-                                    <div class="pred-summary-card">
-                                        <label>60-Min</label>
+                                    <div class="pred-summary-card horizon-btn" data-horizon="60">
+                                        <label>60-MIN</label>
                                         <span class="val" id="pred-60m">--</span>
                                     </div>
                                 </div>
