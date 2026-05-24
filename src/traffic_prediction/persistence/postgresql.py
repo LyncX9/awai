@@ -149,6 +149,12 @@ class PostgreSQLPersistence:
             for row in rows
         ]
 
+    def clear_live_records(self) -> None:
+        self.initialize()
+        with self._connect() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("DELETE FROM live_traffic_records")
+
     def insert_prediction(
         self,
         prediction: PredictionResponse,

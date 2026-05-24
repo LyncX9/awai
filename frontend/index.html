@@ -337,9 +337,12 @@
                             
                             <div class="form-divider"></div>
                             
-                            <div class="form-actions">
+                            <div class="form-actions" style="flex-wrap: wrap; gap: 10px;">
                                 <button type="button" class="btn btn-secondary" id="btn-demo-ingest">Inject Demo Network Data</button>
-                                <button type="submit" class="btn btn-primary" id="btn-submit-ingest">
+                                <button type="button" class="btn btn-secondary" style="border-color: var(--color-red); color: var(--color-red);" id="btn-reset-ingest">
+                                    <i data-lucide="rotate-ccw"></i> Reset
+                                </button>
+                                <button type="submit" class="btn btn-primary" id="btn-submit-ingest" style="flex-grow: 1;">
                                     <i data-lucide="send"></i>
                                     <span>Ingest Speed Record</span>
                                 </button>

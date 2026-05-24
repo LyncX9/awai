@@ -90,6 +90,7 @@ const docElements = {
     ingestSpeed: document.getElementById('ingest-speed'),
     ingestConfidence: document.getElementById('ingest-confidence'),
     btnDemoIngest: document.getElementById('btn-demo-ingest'),
+    btnResetIngest: document.getElementById('btn-reset-ingest'),
     btnSubmitIngest: document.getElementById('btn-submit-ingest'),
     ingestAlertError: document.getElementById('ingest-alert-error'),
     ingestErrorText: document.getElementById('ingest-error-text'),
@@ -130,6 +131,9 @@ document.addEventListener('DOMContentLoaded', () => {
     docElements.btnRefreshData.addEventListener('click', refreshData);
     docElements.formManualIngest.addEventListener('submit', handleManualIngest);
     docElements.btnDemoIngest.addEventListener('click', handleDemoNetworkIngest);
+    if (docElements.btnResetIngest) {
+        docElements.btnResetIngest.addEventListener('click', handleResetIngest);
+    }
 
     // Horizon Selector via Forecast Cards
     const horizonCards = document.querySelectorAll('.pred-summary-card.horizon-btn');
@@ -1067,7 +1071,9 @@ async function handleDemoNetworkIngest() {
     const modal = document.getElementById('custom-modal-overlay');
     const btnCancel = document.getElementById('modal-btn-cancel');
     const btnConfirm = document.getElementById('modal-btn-confirm');
+    const msgEl = document.getElementById('custom-modal-message');
     
+    msgEl.innerText = "This will generate and ingest simulated live traffic speed records for all 50 Sukabumi segments. Continue?";
     modal.classList.remove('hidden');
     
     const cleanup = () => {
@@ -1133,6 +1139,60 @@ async function executeDemoIngest() {
     } finally {
         docElements.btnDemoIngest.disabled = false;
         docElements.btnDemoIngest.innerText = oldBtnText;
+    }
+}
+
+async function handleResetIngest() {
+    const modal = document.getElementById('custom-modal-overlay');
+    const btnCancel = document.getElementById('modal-btn-cancel');
+    const btnConfirm = document.getElementById('modal-btn-confirm');
+    const msgEl = document.getElementById('custom-modal-message');
+    
+    msgEl.innerText = "Are you sure you want to reset all ingestion buffers and wipe manual records from the database? This will return the predictions to baseline free-flow traffic patterns.";
+    modal.classList.remove('hidden');
+    
+    const cleanup = () => {
+        modal.classList.add('hidden');
+        btnCancel.removeEventListener('click', onCancel);
+        btnConfirm.removeEventListener('click', onConfirm);
+    };
+    
+    const onCancel = () => cleanup();
+    const onConfirm = async () => {
+        cleanup();
+        await executeResetIngest();
+    };
+    
+    btnCancel.addEventListener('click', onCancel);
+    btnConfirm.addEventListener('click', onConfirm);
+}
+
+async function executeResetIngest() {
+    const btn = docElements.btnResetIngest;
+    const oldHtml = btn.innerHTML;
+    
+    btn.disabled = true;
+    btn.innerHTML = `<i data-lucide="loader" class="loading-spin"></i> Resetting...`;
+    if (window.lucide) window.lucide.createIcons();
+    
+    try {
+        const res = await fetchWithAuth(`${API_URL}/ingest/reset`, {
+            method: 'POST'
+        });
+        
+        if (!res.ok) {
+            const errBody = await res.json().catch(() => ({}));
+            throw new Error(errBody.message || `HTTP ${res.status}`);
+        }
+        
+        alert("Ingestion buffers and database wiped successfully! Traffic has been restored to baseline.");
+        refreshData();
+    } catch (err) {
+        alert("Reset failed: " + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = oldHtml;
+        if (window.lucide) window.lucide.createIcons();
     }
 }
 

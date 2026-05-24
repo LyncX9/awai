@@ -250,6 +250,26 @@ class AppState:
             reloaded_at=datetime.now(),
         )
 
+    def reset_ingestion(self) -> dict:
+        self.live_buffer.buffers.clear()
+        self.invalidate_prediction_cache()
+        if self.db is not None:
+            try:
+                self.db.clear_live_records()
+            except Exception as e:
+                self.app_logger.error("postgres_reset_live_records_failed", extra={"error": str(e)})
+        
+        path = self._buffer_state_path()
+        if path.exists():
+            try:
+                path.unlink()
+            except Exception as e:
+                self.app_logger.error("failed_to_unlink_buffer_state", extra={"error": str(e)})
+
+        self.seed_live_buffer_from_history()
+        
+        return {"status": "success", "message": "Ingestion reset successfully", "cache_invalidated": True}
+
     def ingest_manual(self, request: ManualIngestRequest) -> ManualIngestResponse:
         if self.roads is None or self.roads.empty:
             raise HTTPException(status_code=503, detail="Road master data is not loaded")
@@ -1333,6 +1353,11 @@ def register_routes(app: FastAPI) -> None:
     def ingest_manual(request: ManualIngestRequest) -> ManualIngestResponse:
         state = get_app_state(app)
         return state.ingest_manual(request)
+
+    @app.post("/ingest/reset")
+    def ingest_reset() -> dict:
+        state = get_app_state(app)
+        return state.reset_ingestion()
 
     @app.post("/ingest/tomtom", response_model=JobTriggerResponse)
     def ingest_tomtom() -> JobTriggerResponse:

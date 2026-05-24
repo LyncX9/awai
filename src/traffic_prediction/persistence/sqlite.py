@@ -151,6 +151,12 @@ class SQLitePersistence:
             for row in rows
         ]
 
+    def clear_live_records(self) -> None:
+        self.initialize()
+        with self._connect() as connection:
+            connection.execute("DELETE FROM live_traffic_records")
+            connection.commit()
+
     def insert_prediction(
         self,
         prediction: PredictionResponse,
