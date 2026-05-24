@@ -79,6 +79,7 @@ const docElements = {
     pred30m: document.getElementById('pred-30m'),
     pred45m: document.getElementById('pred-45m'),
     pred60m: document.getElementById('pred-60m'),
+    predNow: document.getElementById('pred-now'),
     
     // Horizon Selector
     horizonBtns: document.querySelectorAll('.horizon-btn'),
@@ -814,6 +815,16 @@ async function refreshSegmentDetails(roadId) {
         const yLowerList = [];
         const yUpperList = [];
         const labelsList = ['15 min', '30 min', '45 min', '60 min'];
+        
+        if (docElements.predNow) {
+            let liveSpeedStr = '--';
+            if (activeSegmentData.liveSpeedVal != null) {
+                liveSpeedStr = `${activeSegmentData.liveSpeedVal.toFixed(1)} km/h`;
+            } else if (forecasts[15]) {
+                liveSpeedStr = `${forecasts[15].predicted_speed.toFixed(1)} km/h`;
+            }
+            docElements.predNow.innerText = liveSpeedStr;
+        }
         
         horizons.forEach(h => {
             const details = forecasts[h];
