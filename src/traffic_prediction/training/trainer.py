@@ -12,7 +12,7 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
-from traffic_prediction.models.lstm import LSTMModelConfig, TrafficLSTM, count_trainable_parameters
+from traffic_prediction.models.lstm import LSTMModelConfig, TrafficLSTM, TrafficSeq2SeqLSTM, count_trainable_parameters
 from traffic_prediction.models.registry import ModelRegistry, ModelRegistryEntry
 
 
@@ -78,8 +78,12 @@ class LSTMTrainer:
         artifact_path.mkdir(parents=True, exist_ok=True)
 
         device = torch.device(self.training_config.device)
-        model = TrafficLSTM(self.model_config).to(device)
-        criterion = nn.MSELoss()
+        if getattr(self.model_config, "seq2seq", False):
+            model = TrafficSeq2SeqLSTM(self.model_config).to(device)
+        else:
+            model = TrafficLSTM(self.model_config).to(device)
+        # We use HuberLoss as it is more robust to traffic outliers than MSE
+        criterion = nn.HuberLoss()
         optimizer = torch.optim.Adam(
             model.parameters(),
             lr=self.training_config.learning_rate,

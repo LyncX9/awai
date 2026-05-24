@@ -1,0 +1,170 @@
+[
+  {
+    "params": {
+      "hidden_sizes": [
+        128,
+        64
+      ],
+      "dropout": 0.3,
+      "learning_rate": 0.001
+    },
+    "model_version": "lstm-20260523-163029-480172",
+    "best_epoch": 149,
+    "validation_mae": 0.25055762357252803,
+    "validation_rmse": 0.35313333112160183
+  },
+  {
+    "params": {
+      "hidden_sizes": [
+        128,
+        64
+      ],
+      "dropout": 0.3,
+      "learning_rate": 0.0003
+    },
+    "model_version": "lstm-20260523-171942-687350",
+    "best_epoch": 147,
+    "validation_mae": 0.23805890141961408,
+    "validation_rmse": 0.34428680526151845
+  },
+  {
+    "params": {
+      "hidden_sizes": [
+        128,
+        64
+      ],
+      "dropout": 0.4,
+      "learning_rate": 0.001
+    },
+    "model_version": "lstm-20260523-180221-935938",
+    "best_epoch": 150,
+    "validation_mae": 0.23542659667723956,
+    "validation_rmse": 0.35173218092768616
+  },
+  {
+    "params": {
+      "hidden_sizes": [
+        128,
+        64
+      ],
+      "dropout": 0.4,
+      "learning_rate": 0.0003
+    },
+    "model_version": "lstm-20260523-184504-479449",
+    "best_epoch": 143,
+    "validation_mae": 0.25537466130792136,
+    "validation_rmse": 0.3582532869861609
+  },
+  {
+    "params": {
+      "hidden_sizes": [
+        128,
+        64
+      ],
+      "dropout": 0.5,
+      "learning_rate": 0.001
+    },
+    "model_version": "lstm-20260523-192628-547014",
+    "best_epoch": 150,
+    "validation_mae": 0.2451894785461154,
+    "validation_rmse": 0.3570585947095214
+  },
+  {
+    "params": {
+      "hidden_sizes": [
+        128,
+        64
+      ],
+      "dropout": 0.5,
+      "learning_rate": 0.0003
+    },
+    "model_version": "lstm-20260523-200809-785795",
+    "best_epoch": 144,
+    "validation_mae": 0.23583727182126513,
+    "validation_rmse": 0.3479203267282457
+  },
+  {
+    "params": {
+      "hidden_sizes": [
+        64,
+        32
+      ],
+      "dropout": 0.3,
+      "learning_rate": 0.001
+    },
+    "model_version": "lstm-20260523-204712-566300",
+    "best_epoch": 149,
+    "validation_mae": 0.23708786840319845,
+    "validation_rmse": 0.34811964241260296
+  },
+  {
+    "params": {
+      "hidden_sizes": [
+        64,
+        32
+      ],
+      "dropout": 0.3,
+      "learning_rate": 0.0003
+    },
+    "model_version": "lstm-20260523-211152-620178",
+    "best_epoch": 149,
+    "validation_mae": 0.2325303695121126,
+    "validation_rmse": 0.34214290274594356
+  },
+  {
+    "params": {
+      "hidden_sizes": [
+        64,
+        32
+      ],
+      "dropout": 0.4,
+      "learning_rate": 0.001
+    },
+    "model_version": "lstm-20260523-213859-661446",
+    "best_epoch": 150,
+    "validation_mae": 0.23860715402001365,
+    "validation_rmse": 0.35399005670333433
+  },
+  {
+    "params": {
+      "hidden_sizes": [
+        64,
+        32
+      ],
+      "dropout": 0.4,
+      "learning_rate": 0.0003
+    },
+    "model_version": "lstm-20260523-220528-341616",
+    "best_epoch": 102,
+    "validation_mae": 0.2510016102034353,
+    "validation_rmse": 0.35572188831114876
+  },
+  {
+    "params": {
+      "hidden_sizes": [
+        64,
+        32
+      ],
+      "dropout": 0.5,
+      "learning_rate": 0.001
+    },
+    "model_version": "lstm-20260523-222241-716989",
+    "best_epoch": 150,
+    "validation_mae": 0.23791299721348944,
+    "validation_rmse": 0.34589620833853124
+  },
+  {
+    "params": {
+      "hidden_sizes": [
+        64,
+        32
+      ],
+      "dropout": 0.5,
+      "learning_rate": 0.0003
+    },
+    "model_version": "lstm-20260523-225200-094154",
+    "best_epoch": 150,
+    "validation_mae": 0.24360324562127153,
+    "validation_rmse": 0.348478003014621
+  }
+]

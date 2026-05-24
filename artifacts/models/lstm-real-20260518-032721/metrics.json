@@ -1,6 +1,0 @@
-{
-  "train_loss": 0.641089062359134,
-  "validation_loss": 0.43069454024501025,
-  "validation_mae": 0.43222642694565067,
-  "validation_rmse": 0.6562732207306631
-}

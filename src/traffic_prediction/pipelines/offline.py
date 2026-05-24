@@ -11,6 +11,9 @@ from traffic_prediction.config.settings import AppConfig, load_config
 from traffic_prediction.data.processor import DataProcessor
 from traffic_prediction.features.offline import FeatureEngineer
 from traffic_prediction.features.spatial import build_neighbor_mapping
+from traffic_prediction.models.lstm import LSTMModelConfig
+from traffic_prediction.training.trainer import LSTMTrainer, TrainingLoopConfig
+from traffic_prediction.models.registry import ModelRegistry
 
 
 DEFAULT_EXCLUDED_FEATURE_COLUMNS = {
@@ -107,8 +110,64 @@ def run_offline_data_pipeline(config: AppConfig | None = None) -> dict:
 
 
 def main() -> None:
-    summary = run_offline_data_pipeline()
+    config = load_config()
+    print("Starting offline data pipeline...")
+    summary = run_offline_data_pipeline(config)
+    print("Data pipeline completed. Summary:")
     print(json.dumps(summary, indent=2, default=str))
+
+    print("\nStarting Seq2Seq LSTM training...")
+    import pandas as pd
+    
+    # Load featured dataset
+    featured_path = summary["artifacts"]["featured_dataset"]
+    featured = pd.read_pickle(featured_path)
+    
+    # Split chronologically
+    processor = DataProcessor(config.data, config.features)
+    feature_columns = summary["feature_columns"]
+    train, validation, test, _ = processor.chronological_split(featured)
+    
+    train_scaled = processor.fit_transform_train(train, feature_columns)
+    validation_scaled = processor.transform_eval(validation)
+    
+    x_train, y_train, _ = processor.create_sequences(train_scaled, feature_columns)
+    x_validation, y_validation, _ = processor.create_sequences(validation_scaled, feature_columns)
+    
+    # Configure Seq2Seq LSTM
+    model_config = LSTMModelConfig(
+        input_size=len(feature_columns),
+        prediction_horizon=4,  # Matches y_train horizon
+        hidden_sizes=(64, 32),
+        dense_units=32,
+        dropout=0.4,
+        seq2seq=True,  # Using Encoder-Decoder
+    )
+    
+    training_config = TrainingLoopConfig(
+        max_epochs=300,
+        batch_size=64,
+        learning_rate=0.0003,
+        early_stopping_patience=15,
+    )
+    
+    trainer = LSTMTrainer(model_config=model_config, training_config=training_config)
+    registry = ModelRegistry(config.paths.models_dir / "registry.json")
+    
+    result = trainer.train(
+        X_train=x_train,
+        y_train=y_train,
+        X_validation=x_validation,
+        y_validation=y_validation,
+        artifact_root=config.paths.reports_dir,
+        registry=registry,
+        extra_metadata={"model_type": "seq2seq_lstm", "loss": "huber_loss"}
+    )
+    
+    print("\nTraining completed!")
+    print(f"Model version: {result.model_version}")
+    print(f"Best epoch: {result.best_epoch}")
+    print(f"Validation MAE: {result.validation_mae:.4f}")
 
 
 if __name__ == "__main__":

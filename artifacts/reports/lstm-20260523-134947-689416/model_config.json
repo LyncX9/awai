@@ -1,0 +1,43 @@
+{
+  "model_version": "lstm-20260523-134947-689416",
+  "created_at": "2026-05-23T13:51:43.682674",
+  "model_type": "lstm",
+  "framework": "pytorch",
+  "checkpoint_path": "C:\\AIproject\\AWAI\\artifacts\\reports\\lstm-20260523-134947-689416\\model.pt",
+  "model_config": {
+    "input_size": 41,
+    "prediction_horizon": 4,
+    "hidden_sizes": [
+      128,
+      64
+    ],
+    "dense_units": 32,
+    "dropout": 0.3,
+    "recurrent_dropout": 0.2,
+    "bidirectional": false,
+    "seq2seq": true
+  },
+  "training_config": {
+    "max_epochs": 10,
+    "batch_size": 64,
+    "learning_rate": 0.001,
+    "early_stopping_patience": 5,
+    "lr_plateau_patience": 5,
+    "lr_plateau_factor": 0.5,
+    "warmup_epochs": 10,
+    "warmup_start_factor": 0.1,
+    "gradient_clip_norm": 1.0,
+    "weight_decay": 0.0001,
+    "random_seed": 42,
+    "device": "cpu"
+  },
+  "parameter_count": 121281,
+  "best_epoch": 2,
+  "metrics": {
+    "train_loss": 0.1622515867065075,
+    "validation_loss": 0.18898445108782586,
+    "validation_mae": 0.4461629026416364,
+    "validation_rmse": 0.6730408562345651
+  },
+  "extra_metadata": {}
+}

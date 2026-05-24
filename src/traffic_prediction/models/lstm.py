@@ -18,6 +18,8 @@ class LSTMModelConfig:
     dropout: float = 0.3
     recurrent_dropout: float = 0.2
     bidirectional: bool = False
+    seq2seq: bool = False
+    target_index: int = 1  # Index of the target feature in the input sequence
 
     @classmethod
     def lightweight(
@@ -34,6 +36,7 @@ class LSTMModelConfig:
             dropout=0.3,
             recurrent_dropout=0.2,
             bidirectional=bidirectional,
+            seq2seq=False,
         )
 
 
@@ -144,12 +147,88 @@ class TrafficLSTM(nn.Module):
         return torch.stack(outputs, dim=1)
 
 
+class TrafficSeq2SeqLSTM(nn.Module):
+    """
+    Encoder-Decoder LSTM architecture for multi-step traffic prediction.
+    Uses pure LSTM cells.
+    """
+
+    def __init__(self, config: LSTMModelConfig) -> None:
+        super().__init__()
+        self.config = config
+        
+        encoder_hidden = config.hidden_sizes[0]
+        decoder_hidden = config.hidden_sizes[1] if len(config.hidden_sizes) > 1 else encoder_hidden
+        
+        direction_multiplier = 2 if config.bidirectional else 1
+
+        if config.bidirectional:
+            self.encoder = nn.LSTM(
+                input_size=config.input_size,
+                hidden_size=encoder_hidden,
+                batch_first=True,
+                bidirectional=True,
+            )
+        else:
+            self.encoder = nn.LSTM(
+                input_size=config.input_size,
+                hidden_size=encoder_hidden,
+                batch_first=True,
+            )
+
+        self.decoder = nn.LSTM(
+            input_size=1,  # Predicts speed autoregressively
+            hidden_size=decoder_hidden,
+            batch_first=True,
+        )
+
+        # Map encoder hidden state to decoder hidden state size if they differ or if bidirectional
+        self.encoder_to_decoder_h = nn.Linear(encoder_hidden * direction_multiplier, decoder_hidden)
+        self.encoder_to_decoder_c = nn.Linear(encoder_hidden * direction_multiplier, decoder_hidden)
+
+        self.dropout = nn.Dropout(config.dropout)
+        self.regressor = nn.Linear(decoder_hidden, 1)
+
+    def forward(self, inputs: torch.Tensor, target: torch.Tensor | None = None) -> torch.Tensor:
+        batch_size = inputs.size(0)
+
+        # Encoder
+        _, (h_n, c_n) = self.encoder(inputs)
+        
+        # Format hidden states for decoder
+        if self.config.bidirectional:
+            h_n = h_n.view(2, 1, batch_size, -1).transpose(0, 1).contiguous().view(1, batch_size, -1)
+            c_n = c_n.view(2, 1, batch_size, -1).transpose(0, 1).contiguous().view(1, batch_size, -1)
+        
+        # h_n shape: (num_layers, batch_size, encoder_hidden * direction_multiplier)
+        h_decoder = self.encoder_to_decoder_h(h_n)
+        c_decoder = self.encoder_to_decoder_c(c_n)
+        
+        decoder_hidden = (h_decoder, c_decoder)
+
+        # Decoder initialization (using the last observed target feature as the first input)
+        decoder_input = inputs[:, -1, self.config.target_index].unsqueeze(1).unsqueeze(2)  # Shape: (batch_size, 1, 1)
+        
+        outputs = []
+        for t in range(self.config.prediction_horizon):
+            decoder_out, decoder_hidden = self.decoder(decoder_input, decoder_hidden)
+            decoder_out_dropped = self.dropout(decoder_out)
+            prediction = self.regressor(decoder_out_dropped)
+            outputs.append(prediction)
+            
+            # Autoregressive generation: next input is current prediction
+            decoder_input = prediction
+            
+        return torch.cat(outputs, dim=1)
+
+
 def build_lstm_model(
     input_size: int,
     prediction_horizon: int = 4,
     lightweight: bool = False,
     bidirectional: bool = False,
-) -> TrafficLSTM:
+    seq2seq: bool = False,
+) -> nn.Module:
     """Build the default or alternative lightweight LSTM architecture."""
 
     if lightweight:
@@ -163,7 +242,11 @@ def build_lstm_model(
             input_size=input_size,
             prediction_horizon=prediction_horizon,
             bidirectional=bidirectional,
+            seq2seq=seq2seq,
         )
+        
+    if seq2seq:
+        return TrafficSeq2SeqLSTM(config)
     return TrafficLSTM(config)
 
 

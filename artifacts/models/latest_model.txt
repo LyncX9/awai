@@ -1,1 +1,1 @@
-lstm-real-20260518-032721
+C:\AIproject\AWAI\artifacts\reports\lstm-20260523-225200-094154

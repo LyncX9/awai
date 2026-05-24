@@ -8,8 +8,8 @@ import torch
 
 from traffic_prediction.data.scalers import ScalerStore
 from traffic_prediction.inference.realtime import PredictionModelRunner
-from traffic_prediction.models.lstm import TrafficLSTM, LSTMModelConfig
-
+from traffic_prediction.models.lstm import TrafficLSTM, TrafficSeq2SeqLSTM, LSTMModelConfig
+import torch.nn as nn
 
 class PyTorchModelRunner(PredictionModelRunner):
     """
@@ -19,7 +19,7 @@ class PyTorchModelRunner(PredictionModelRunner):
 
     def __init__(
         self,
-        model: TrafficLSTM,
+        model: nn.Module,
         scaler: ScalerStore,
         device: torch.device,
     ) -> None:
@@ -74,9 +74,13 @@ class PyTorchModelRunner(PredictionModelRunner):
             dropout=resolved_config.get("dropout", 0.3),
             recurrent_dropout=resolved_config.get("recurrent_dropout", 0.2),
             bidirectional=resolved_config.get("bidirectional", False),
+            seq2seq=resolved_config.get("seq2seq", False),
         )
 
-        model = TrafficLSTM(model_config)
+        if getattr(model_config, "seq2seq", False):
+            model = TrafficSeq2SeqLSTM(model_config)
+        else:
+            model = TrafficLSTM(model_config)
         checkpoint = torch.load(model_path, map_location=device, weights_only=False)
         # Handle both plain state_dict and full checkpoint dict
         state_dict = checkpoint.get("model_state_dict", checkpoint) if isinstance(checkpoint, dict) else checkpoint

@@ -41,6 +41,7 @@ class HyperparameterCandidate:
             dense_units=self.dense_units,
             dropout=self.dropout,
             recurrent_dropout=self.recurrent_dropout,
+            seq2seq=True,  # Enable Seq2Seq architecture for tuning
         )
 
     def to_training_config(self, base: TrainingLoopConfig | None = None) -> TrainingLoopConfig:

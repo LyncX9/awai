@@ -1,0 +1,170 @@
+[
+  {
+    "params": {
+      "hidden_sizes": [
+        128,
+        64
+      ],
+      "dropout": 0.3,
+      "learning_rate": 0.001
+    },
+    "model_version": "lstm-20260523-143213-143845",
+    "best_epoch": 2,
+    "validation_mae": 0.4461629026416364,
+    "validation_rmse": 0.6730408562345651
+  },
+  {
+    "params": {
+      "hidden_sizes": [
+        128,
+        64
+      ],
+      "dropout": 0.3,
+      "learning_rate": 0.0003
+    },
+    "model_version": "lstm-20260523-143433-912273",
+    "best_epoch": 1,
+    "validation_mae": 0.41629995466766084,
+    "validation_rmse": 0.6581915261809954
+  },
+  {
+    "params": {
+      "hidden_sizes": [
+        128,
+        64
+      ],
+      "dropout": 0.4,
+      "learning_rate": 0.001
+    },
+    "model_version": "lstm-20260523-143642-348887",
+    "best_epoch": 2,
+    "validation_mae": 0.4461629026416364,
+    "validation_rmse": 0.6730408562345651
+  },
+  {
+    "params": {
+      "hidden_sizes": [
+        128,
+        64
+      ],
+      "dropout": 0.4,
+      "learning_rate": 0.0003
+    },
+    "model_version": "lstm-20260523-143859-404685",
+    "best_epoch": 1,
+    "validation_mae": 0.41629995466766084,
+    "validation_rmse": 0.6581915261809954
+  },
+  {
+    "params": {
+      "hidden_sizes": [
+        128,
+        64
+      ],
+      "dropout": 0.5,
+      "learning_rate": 0.001
+    },
+    "model_version": "lstm-20260523-144105-071829",
+    "best_epoch": 2,
+    "validation_mae": 0.4461629026416364,
+    "validation_rmse": 0.6730408562345651
+  },
+  {
+    "params": {
+      "hidden_sizes": [
+        128,
+        64
+      ],
+      "dropout": 0.5,
+      "learning_rate": 0.0003
+    },
+    "model_version": "lstm-20260523-144321-917578",
+    "best_epoch": 1,
+    "validation_mae": 0.41629995466766084,
+    "validation_rmse": 0.6581915261809954
+  },
+  {
+    "params": {
+      "hidden_sizes": [
+        64,
+        32
+      ],
+      "dropout": 0.3,
+      "learning_rate": 0.001
+    },
+    "model_version": "lstm-20260523-144527-653339",
+    "best_epoch": 2,
+    "validation_mae": 0.4435846573188768,
+    "validation_rmse": 0.665216979960987
+  },
+  {
+    "params": {
+      "hidden_sizes": [
+        64,
+        32
+      ],
+      "dropout": 0.3,
+      "learning_rate": 0.0003
+    },
+    "model_version": "lstm-20260523-144708-766148",
+    "best_epoch": 5,
+    "validation_mae": 0.4227834707147935,
+    "validation_rmse": 0.6575245238224231
+  },
+  {
+    "params": {
+      "hidden_sizes": [
+        64,
+        32
+      ],
+      "dropout": 0.4,
+      "learning_rate": 0.001
+    },
+    "model_version": "lstm-20260523-144915-250018",
+    "best_epoch": 2,
+    "validation_mae": 0.4435846573188768,
+    "validation_rmse": 0.665216979960987
+  },
+  {
+    "params": {
+      "hidden_sizes": [
+        64,
+        32
+      ],
+      "dropout": 0.4,
+      "learning_rate": 0.0003
+    },
+    "model_version": "lstm-20260523-145056-355906",
+    "best_epoch": 5,
+    "validation_mae": 0.4227834707147935,
+    "validation_rmse": 0.6575245238224231
+  },
+  {
+    "params": {
+      "hidden_sizes": [
+        64,
+        32
+      ],
+      "dropout": 0.5,
+      "learning_rate": 0.001
+    },
+    "model_version": "lstm-20260523-145302-112993",
+    "best_epoch": 2,
+    "validation_mae": 0.4435846573188768,
+    "validation_rmse": 0.665216979960987
+  },
+  {
+    "params": {
+      "hidden_sizes": [
+        64,
+        32
+      ],
+      "dropout": 0.5,
+      "learning_rate": 0.0003
+    },
+    "model_version": "lstm-20260523-145442-963714",
+    "best_epoch": 5,
+    "validation_mae": 0.4227834707147935,
+    "validation_rmse": 0.6575245238224231
+  }
+]
