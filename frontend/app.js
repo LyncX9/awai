@@ -1286,15 +1286,15 @@ function renderHorizonDetails() {
     let segmentText = 'Free Flow';
     let ringColor = 'var(--color-green)';
     
-    if (speedRatio < 0.40) {
+    if (speedRatio < 0.30) {
         segmentCong = 'congested';
         segmentText = 'Severe Congestion';
-        ringColor = 'var(--color-red)';
-    } else if (speedRatio < 0.60) {
+        ringColor = 'var(--color-dark-red)';
+    } else if (speedRatio < 0.50) {
         segmentCong = 'congested';
         segmentText = 'Congested';
         ringColor = 'var(--color-red)';
-    } else if (speedRatio < 0.80) {
+    } else if (speedRatio < 0.75) {
         segmentCong = 'moderate';
         segmentText = 'Moderate Flow';
         ringColor = 'var(--color-amber)';
