@@ -110,24 +110,9 @@ class RealtimePredictionPipeline:
                 feature_result=feature_result,
             )
 
-        # Fallback path (LSTM failed or wasn't run)
-        latest_record = self._latest_live_record(context.request.road_id)
-        fallback = self.fallback_predictor.predict(
-            road_id=context.request.road_id,
-            target_time=context.target_time,
-            horizon_minutes=context.request.horizon_minutes,
-            # If we have any live data at all, use the latest observation as the prediction base
-            # rather than the hardcoded global_default (30.0 km/h).
-            latest_live_record=latest_record,
-            prefer_persistence=latest_record is not None and context.request.horizon_minutes <= 30,  # Prefer persistence for short horizons if any live record is available
-        )
-        return self._format_fallback_response(
-            context=context,
-            fallback=fallback,
-            quality_report=quality_report,
-            feature_result=feature_result,
-            feature_error=active_error,
-        )
+        # Fallback removed as per user request. Raise 503 instead.
+        from fastapi import HTTPException
+        raise HTTPException(status_code=503, detail=active_error or "Model inference unavailable or failed")
 
 
     def _format_live_response(
