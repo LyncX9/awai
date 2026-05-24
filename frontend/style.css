@@ -1575,6 +1575,201 @@ select.glass-input option {
 }
 
 .horizon-btn.active {
+    flex-shrink: 0;
+    background: var(--text-muted);
+    transition: var(--transition-smooth);
+}
+
+.road-item-dot.green {
+    background: var(--color-green);
+    box-shadow: 0 0 8px var(--color-green-glow);
+}
+.road-item-dot.amber {
+    background: var(--color-amber);
+    box-shadow: 0 0 8px var(--color-amber-glow);
+}
+.road-item-dot.red {
+    background: var(--color-red);
+    box-shadow: 0 0 8px var(--color-red-glow);
+}
+
+.road-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.road-item-name {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.3;
+}
+
+.road-item-id {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    font-family: monospace;
+    margin-top: 1px;
+}
+
+.road-item-speed {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-align: right;
+    flex-shrink: 0;
+    min-width: 54px;
+}
+
+.road-item-speed .speed-unit-small {
+    font-size: 0.62rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    display: block;
+    text-align: right;
+}
+
+.road-item-chevron {
+    color: var(--text-muted);
+    flex-shrink: 0;
+    opacity: 0;
+    transition: var(--transition-smooth);
+    display: flex;
+    align-items: center;
+}
+
+.road-item-chevron svg { width: 14px; height: 14px; }
+
+.road-list-item:hover .road-item-chevron {
+    opacity: 1;
+    color: var(--violet-accent);
+}
+
+.road-list-empty {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+/* Back button */
+.back-to-list-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+
+.back-to-list-btn:hover {
+    background: rgba(139, 92, 246, 0.1);
+    border-color: var(--border-color-focus);
+    color: var(--violet-accent);
+}
+
+.back-to-list-btn svg { width: 13px; height: 13px; }
+
+.segment-name-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding: 0.25rem 0;
+}
+
+.segment-name-row h3 {
+    font-family: var(--font-heading);
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.3;
+}
+
+.predictions-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+}
+
+.pred-summary-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 0.75rem 0.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+
+.pred-summary-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.pred-summary-card.active {
+    background: rgba(139, 92, 246, 0.15);
+    border-color: var(--violet-accent);
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.2);
+}
+
+.pred-summary-card label {
+    display: block;
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.pred-summary-card .val {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Horizon Selector */
+.horizon-selector {
+    display: flex;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.25rem;
+    gap: 0.25rem;
+    margin: 0.5rem 0;
+}
+
+.horizon-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.4rem 0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+
+.horizon-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.horizon-btn.active {
     background: var(--violet-accent);
     color: white;
     box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
@@ -1582,3 +1777,69 @@ select.glass-input option {
 
 @keyframes spin { to { transform: rotate(360deg); } }
 .spin-icon, .spin-icon svg { animation: spin 1.2s linear infinite; }
+
+/* Custom Modal */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 1;
+    transition: var(--transition-smooth);
+}
+
+.modal-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.modal-content {
+    width: 90%;
+    max-width: 450px;
+    border-radius: 16px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    transform: translateY(0) scale(1);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.modal-overlay.hidden .modal-content {
+    transform: translateY(20px) scale(0.95);
+}
+
+.modal-header h3 {
+    font-family: var(--font-heading);
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--color-amber);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.modal-body p {
+    color: var(--text-secondary);
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.modal-footer .btn {
+    padding: 0.6rem 1.5rem;
+}

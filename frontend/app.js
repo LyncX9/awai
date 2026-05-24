@@ -1064,10 +1064,29 @@ async function handleDemoNetworkIngest() {
         return;
     }
     
-    if (!confirm("This will generate and ingest simulated live traffic speed records (randomized between 10 km/h and 60 km/h) for all 50 Sukabumi segments, flushing the prediction cache. Continue?")) {
-        return;
-    }
+    const modal = document.getElementById('custom-modal-overlay');
+    const btnCancel = document.getElementById('modal-btn-cancel');
+    const btnConfirm = document.getElementById('modal-btn-confirm');
     
+    modal.classList.remove('hidden');
+    
+    const cleanup = () => {
+        modal.classList.add('hidden');
+        btnCancel.removeEventListener('click', onCancel);
+        btnConfirm.removeEventListener('click', onConfirm);
+    };
+    
+    const onCancel = () => cleanup();
+    const onConfirm = async () => {
+        cleanup();
+        await executeDemoIngest();
+    };
+    
+    btnCancel.addEventListener('click', onCancel);
+    btnConfirm.addEventListener('click', onConfirm);
+}
+
+async function executeDemoIngest() {
     const oldBtnText = docElements.btnDemoIngest.innerText;
     docElements.btnDemoIngest.disabled = true;
     docElements.btnDemoIngest.innerText = "Simulating bulk network updates...";
