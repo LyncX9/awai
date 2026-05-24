@@ -1392,9 +1392,9 @@ def register_routes(app: FastAPI) -> None:
             ratio = current_speed / free_flow_speed if free_flow_speed > 0 else 1.0
             if ratio >= 0.75:
                 current_congestion_level = "free_flow"
-            elif ratio >= 0.60:
+            elif ratio >= 0.50:
                 current_congestion_level = "moderate"
-            elif ratio >= 0.40:
+            elif ratio >= 0.30:
                 current_congestion_level = "congested"
             else:
                 current_congestion_level = "severe"

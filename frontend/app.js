@@ -1074,10 +1074,14 @@ async function handleDemoNetworkIngest() {
     
     try {
         const payloadRecords = roadsData.map(road => {
-            // Generate normal random speeds centered around weight limits
-            const weightCoeff = road.road_weight || 1.0;
-            const baseCenter = 35.0 * weightCoeff;
-            const randSpeed = Math.max(5.0, Math.min(100.0, baseCenter + (Math.random() * 24 - 12)));
+            // Generate normal random speeds based on free-flow speed and congestion weight
+            // High road_weight (e.g. 0.8) -> high chance of congestion -> lower speed
+            const freeFlow = road.free_flow_speed || 35.0;
+            const weightCoeff = road.road_weight || 0.5;
+            // e.g. weight 0.8 -> speed becomes 44% of freeflow (severe/congested)
+            // e.g. weight 0.2 -> speed becomes 86% of freeflow (free flow)
+            const baseCenter = freeFlow * (1.0 - (weightCoeff * 0.7));
+            const randSpeed = Math.max(5.0, Math.min(100.0, baseCenter + (Math.random() * (freeFlow * 0.3) - (freeFlow * 0.15))));
             
             return {
                 road_id: road.road_id,
