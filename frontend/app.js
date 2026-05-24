@@ -837,7 +837,7 @@ async function refreshSegmentDetails(roadId) {
                 yUpperList.push(details.uncertainty_upper);
             } else {
                 summaryVal.innerText = '--';
-                const fallbackSpeed = liveSpeedVal ?? displaySpeedVal;
+                const fallbackSpeed = activeSegmentData.liveSpeedVal != null ? activeSegmentData.liveSpeedVal : 35;
                 yPredList.push(fallbackSpeed);
                 yLowerList.push(fallbackSpeed * 0.8);
                 yUpperList.push(fallbackSpeed * 1.2);
@@ -845,7 +845,7 @@ async function refreshSegmentDetails(roadId) {
         });
         
         // Re-draw forecast chart with live speed as baseline reference (garis putus-putus)
-        renderForecastChart(labelsList, yPredList, yLowerList, yUpperList, liveSpeedVal);
+        renderForecastChart(labelsList, yPredList, yLowerList, yUpperList, activeSegmentData.liveSpeedVal);
         
     } catch (err) {
         console.error("Failed to load segment specifics:", err);
