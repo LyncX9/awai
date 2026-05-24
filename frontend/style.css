@@ -1500,5 +1500,41 @@ select.glass-input option {
     line-height: 1.3;
 }
 
+/* Horizon Selector */
+.horizon-selector {
+    display: flex;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.25rem;
+    gap: 0.25rem;
+    margin: 0.5rem 0;
+}
+
+.horizon-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.4rem 0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+
+.horizon-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.horizon-btn.active {
+    background: var(--violet-accent);
+    color: white;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
 @keyframes spin { to { transform: rotate(360deg); } }
 .spin-icon, .spin-icon svg { animation: spin 1.2s linear infinite; }

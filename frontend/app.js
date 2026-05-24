@@ -28,8 +28,10 @@ let selectedRoadId = null;
 let forecastChart = null;
 let updateInterval = null;
 let statusInterval = null;
+let currentSelectedHorizon = 'now'; // Global state for UI
 
 // DOM Elements
+
 const docElements = {
     // Navigation
     navItems: document.querySelectorAll('.nav-item'),
@@ -78,6 +80,9 @@ const docElements = {
     pred45m: document.getElementById('pred-45m'),
     pred60m: document.getElementById('pred-60m'),
     
+    // Horizon Selector
+    horizonBtns: document.querySelectorAll('.horizon-btn'),
+    
     // Manual Ingest Form
     formManualIngest: document.getElementById('form-manual-ingest'),
     ingestRoadId: document.getElementById('ingest-road-id'),
@@ -124,6 +129,20 @@ document.addEventListener('DOMContentLoaded', () => {
     docElements.btnRefreshData.addEventListener('click', refreshData);
     docElements.formManualIngest.addEventListener('submit', handleManualIngest);
     docElements.btnDemoIngest.addEventListener('click', handleDemoNetworkIngest);
+
+    // Horizon Selector
+    if (docElements.horizonBtns) {
+        docElements.horizonBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                docElements.horizonBtns.forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currentSelectedHorizon = e.target.getAttribute('data-horizon');
+                if (activeSegmentData) {
+                    renderHorizonDetails();
+                }
+            });
+        });
+    }
 
     // Road list back button
     if (docElements.btnBackToList) {
@@ -778,64 +797,15 @@ async function refreshSegmentDetails(roadId) {
             }
         });
         
-        // 2. Prioritize LIVE speed for the main display ring (monitoring aktual), and show PREDICTED speed as secondary
-        const pred15 = forecasts[15];
-        let liveSpeedVal = pred15?.current_speed;
-        let displaySpeedVal = pred15?.predicted_speed ?? 35.0;
-        let confidenceScore = pred15?.confidence_score ?? 0.95;
-        const freeFlowSpeed = pred15?.free_flow_speed ?? roadObj.free_flow_speed ?? 35.0;
+        // Cache data for horizon selector
+        activeSegmentData = {
+            roadObj,
+            forecasts,
+            liveSpeedVal: forecasts[15]?.current_speed
+        };
         
-        // 3. Classify berdasarkan LIVE speed untuk monitoring yang aktual
-        const actualSpeed = liveSpeedVal != null ? liveSpeedVal : displaySpeedVal;
-        const speedRatio = actualSpeed / freeFlowSpeed;
-        
-        let segmentCong = 'free';
-        let segmentText = 'Free Flow';
-        let ringColor = 'var(--color-green)';
-        
-        if (speedRatio < 0.40) {
-            segmentCong = 'congested';
-            segmentText = 'Severe Congestion';
-            ringColor = 'var(--color-red)';
-        } else if (speedRatio < 0.60) {
-            segmentCong = 'congested';
-            segmentText = 'Congested';
-            ringColor = 'var(--color-red)';
-        } else if (speedRatio < 0.80) { // Naikkan threshold ke 0.80 agar lebih toleran
-            segmentCong = 'moderate';
-            segmentText = 'Moderate Flow';
-            ringColor = 'var(--color-amber)';
-        }
-        
-        // 4. Update current speed ring display (showing LIVE speed)
-        docElements.segmentCurrentSpeed.innerText = actualSpeed.toFixed(1);
-        
-        // Show data source indicator under the speed value
-        const predMethod15 = pred15?.prediction_method || '';
-        const isLSTM15 = predMethod15 === 'live_lstm_runtime';
-        const sourceLabel = document.getElementById('segment-speed-source');
-        if (sourceLabel) {
-            sourceLabel.innerText = liveSpeedVal != null ? 'Live Speed' : 'Estimated Base';
-            sourceLabel.style.color = liveSpeedVal != null ? 'var(--text-primary)' : 'var(--color-amber)';
-        }
-        
-        const pctConf = (confidenceScore * 100).toFixed(0);
-        docElements.segmentConfidence.innerText = `${pctConf}%`;
-        docElements.segmentConfidenceBar.style.width = `${pctConf}%`;
-        
-        // Tampilkan Prediksi di last update field
-        docElements.segmentLastUpdate.innerText = isLSTM15 
-            ? `Pred +15m: ${displaySpeedVal.toFixed(1)} km/h` 
-            : 'Pred: N/A';
-        
-        // 5. Set congestion badge & ring color
-        const badge = docElements.segmentCongestion;
-        badge.className = 'congestion-badge';
-        badge.classList.add(segmentCong);
-        badge.innerText = segmentText;
-        
-        const ring = docElements.speedRing;
-        ring.style.borderTopColor = ringColor;
+        // Render UI based on selected horizon
+        renderHorizonDetails();
         
         // 6. Render prediction forecast cards & chart
         const yPredList = [];
@@ -1262,4 +1232,87 @@ async function fetchSystemAudits() {
     } catch (err) {
         console.warn("Failed to fetch data quality stats:", err);
     }
+}
+
+// Render dynamic telemetry details based on selected horizon
+function renderHorizonDetails() {
+    if (!activeSegmentData) return;
+    
+    const { roadObj, forecasts, liveSpeedVal } = activeSegmentData;
+    
+    let actualSpeed, confidenceScore, displaySpeedVal, isLSTM;
+    let predText = '';
+    
+    const pred15 = forecasts[15];
+    const displaySpeed15 = pred15?.predicted_speed ?? 35.0;
+    const freeFlowSpeed = roadObj.free_flow_speed ?? 35.0;
+    
+    if (currentSelectedHorizon === 'now') {
+        actualSpeed = liveSpeedVal != null ? liveSpeedVal : displaySpeed15;
+        confidenceScore = pred15?.confidence_score ?? 0.95;
+        isLSTM = pred15?.prediction_method === 'live_lstm_runtime';
+        predText = isLSTM ? `Pred +15m: ${displaySpeed15.toFixed(1)} km/h` : 'Pred: N/A';
+    } else {
+        const horizonPred = forecasts[parseInt(currentSelectedHorizon)];
+        if (horizonPred) {
+            actualSpeed = horizonPred.predicted_speed;
+            confidenceScore = horizonPred.confidence_score;
+            isLSTM = horizonPred.prediction_method === 'live_lstm_runtime';
+            predText = `Predicted for +${currentSelectedHorizon}m`;
+        } else {
+            actualSpeed = displaySpeed15; // fallback
+            confidenceScore = 0.95;
+            predText = 'Data unavailable';
+            isLSTM = false;
+        }
+    }
+    
+    const speedRatio = actualSpeed / freeFlowSpeed;
+    
+    let segmentCong = 'free';
+    let segmentText = 'Free Flow';
+    let ringColor = 'var(--color-green)';
+    
+    if (speedRatio < 0.40) {
+        segmentCong = 'congested';
+        segmentText = 'Severe Congestion';
+        ringColor = 'var(--color-red)';
+    } else if (speedRatio < 0.60) {
+        segmentCong = 'congested';
+        segmentText = 'Congested';
+        ringColor = 'var(--color-red)';
+    } else if (speedRatio < 0.80) {
+        segmentCong = 'moderate';
+        segmentText = 'Moderate Flow';
+        ringColor = 'var(--color-amber)';
+    }
+    
+    // Update current speed ring display
+    docElements.segmentCurrentSpeed.innerText = actualSpeed.toFixed(1);
+    
+    const sourceLabel = document.getElementById('segment-speed-source');
+    if (sourceLabel) {
+        if (currentSelectedHorizon === 'now') {
+            sourceLabel.innerText = liveSpeedVal != null ? 'Live Speed' : 'Estimated Base';
+            sourceLabel.style.color = liveSpeedVal != null ? 'var(--text-primary)' : 'var(--color-amber)';
+        } else {
+            sourceLabel.innerText = 'Predicted Speed';
+            sourceLabel.style.color = 'var(--violet-accent)';
+        }
+    }
+    
+    const pctConf = (confidenceScore * 100).toFixed(0);
+    docElements.segmentConfidence.innerText = `${pctConf}%`;
+    docElements.segmentConfidenceBar.style.width = `${pctConf}%`;
+    
+    docElements.segmentLastUpdate.innerText = predText;
+    
+    const badge = docElements.segmentCongestion;
+    badge.className = 'congestion-badge';
+    badge.classList.remove('free', 'moderate', 'congested');
+    badge.classList.add(segmentCong);
+    badge.innerText = segmentText;
+    
+    const ring = docElements.speedRing;
+    ring.style.borderTopColor = ringColor;
 }
