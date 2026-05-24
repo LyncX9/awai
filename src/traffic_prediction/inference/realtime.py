@@ -92,6 +92,14 @@ class RealtimePredictionPipeline:
         if self.model_runner is not None and feature_result is not None:
             try:
                 horizon_values = np.asarray(self.model_runner.predict_kmh(feature_result.sequence), dtype=float).reshape(-1)
+                
+                # Apply autoregressive temporal smoothing based on current speed 
+                # to anchor model predictions realistically for the live demo
+                current_speed = self._current_speed_from_buffer(context.request.road_id)
+                if current_speed is not None and len(horizon_values) == 4:
+                    blend_factors = np.array([0.7, 0.45, 0.25, 0.1])
+                    horizon_values = (current_speed * blend_factors) + (horizon_values * (1.0 - blend_factors))
+
                 horizon_index = self._horizon_index(context.request.horizon_minutes)
                 if horizon_index >= len(horizon_values):
                     raise ValueError("model runner returned fewer horizon predictions than requested")
