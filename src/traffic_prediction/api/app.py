@@ -334,6 +334,8 @@ class AppState:
             "detect_drift": "drift_check",
             "retraining_candidate": "retraining_candidate",
             "retraining_check": "retraining_candidate",
+            "db_cleanup": "db_cleanup",
+            "database_cleanup": "db_cleanup",
         }
         scheduler_job_name = aliases.get(normalized)
         if scheduler_job_name is None:
@@ -434,11 +436,17 @@ class AppState:
         self.last_buffer_persisted_at = now
         if self.db is not None:
             try:
-                records_to_sync = []
-                for road_id, buffer in self.live_buffer.buffers.items():
-                    records_to_sync.extend(list(buffer))
-                if records_to_sync:
-                    self.db.upsert_live_records(records_to_sync, source="tomtom")
+                # Sync only the single latest record per road to Supabase.
+                # The full rolling buffer (up to 48 timesteps × 50 roads = 2400 rows)
+                # is preserved locally on disk; PostgreSQL is used only for
+                # cross-restart warm-start (needs just the most-recent observation).
+                latest_records = [
+                    records[-1]
+                    for road_id in sorted(self.live_buffer.buffers)
+                    if (records := self.live_buffer.get_latest(road_id))
+                ]
+                if latest_records:
+                    self.db.upsert_live_records(latest_records, source="tomtom")
             except Exception as e:
                 self.app_logger.error("postgres_buffer_persist_sync_failed", extra={"error": str(e)})
         expected_roads = set(self.roads["road_id"].astype(str)) if self.roads is not None else set()
@@ -459,11 +467,14 @@ class AppState:
         self.last_buffer_persisted_at = now
         if self.db is not None:
             try:
-                records_to_sync = []
-                for road_id, buffer in self.live_buffer.buffers.items():
-                    records_to_sync.extend(list(buffer))
-                if records_to_sync:
-                    self.db.upsert_live_records(records_to_sync, source="tomtom")
+                # Sync only the latest record per road (same strategy as persist_live_buffer).
+                latest_records = [
+                    records[-1]
+                    for road_id in sorted(self.live_buffer.buffers)
+                    if (records := self.live_buffer.get_latest(road_id))
+                ]
+                if latest_records:
+                    self.db.upsert_live_records(latest_records, source="tomtom")
             except Exception as e:
                 self.app_logger.error("postgres_tomtom_ingest_sync_failed", extra={"error": str(e)})
         return path
@@ -564,6 +575,72 @@ class AppState:
                 "reason": "quality_or_drift_threshold_met" if should_retrain else "no_retraining_needed",
             },
         )
+
+    def db_cleanup_job(self) -> JobTriggerResponse:
+        """Prune stale rows from Supabase to stay within the free-plan 0.5 GB limit.
+
+        Deletes:
+        - ``live_traffic_records`` rows older than ``db_live_records_retention_hours``
+          (default 12 h — the LSTM only needs the last ~6 h of 15-min data).
+        - ``predictions`` rows older than ``db_predictions_retention_days``
+          (default 3 days).
+
+        Model performance is NOT affected: the authoritative rolling buffer lives
+        in memory (and on disk via pickle snapshot); PostgreSQL is only used as a
+        warm-start seed across container restarts.
+        """
+        now = pd.Timestamp.now(tz=self.config.data.timezone).to_pydatetime()
+        if self.db is None:
+            return JobTriggerResponse(
+                job_name="db_cleanup",
+                status="skipped",
+                triggered_at=now,
+                errors={"db": "No database connection configured"},
+            )
+        try:
+            live_deleted = self.db.prune_live_records(
+                retain_hours=self.config.runtime.db_live_records_retention_hours
+            )
+            pred_deleted = self.db.prune_old_predictions(
+                retain_days=self.config.runtime.db_predictions_retention_days
+            )
+            try:
+                db_stats = self.db.get_db_size_stats()
+            except Exception:
+                db_stats = {}
+            self.runtime_event_logger.write(
+                "db_cleanup",
+                "db_cleanup_completed",
+                {
+                    "live_records_deleted": live_deleted,
+                    "predictions_deleted": pred_deleted,
+                    "retain_live_hours": self.config.runtime.db_live_records_retention_hours,
+                    "retain_predictions_days": self.config.runtime.db_predictions_retention_days,
+                    "db_size": db_stats,
+                },
+                status="completed",
+                occurred_at=now,
+            )
+            return JobTriggerResponse(
+                job_name="db_cleanup",
+                status="completed",
+                triggered_at=now,
+                data_quality={
+                    "live_records_deleted": live_deleted,
+                    "predictions_deleted": pred_deleted,
+                    "retain_live_hours": self.config.runtime.db_live_records_retention_hours,
+                    "retain_predictions_days": self.config.runtime.db_predictions_retention_days,
+                    "db_size_mb": db_stats.get("total", {}).get("size_mb"),
+                },
+            )
+        except Exception as exc:
+            self.app_logger.error("db_cleanup_failed", extra={"error": str(exc)})
+            return JobTriggerResponse(
+                job_name="db_cleanup",
+                status="failed",
+                triggered_at=now,
+                errors={"db_cleanup": str(exc)},
+            )
 
     def data_quality(self) -> DataQualityResponse:
         if self.roads is None or self.roads.empty:
@@ -1007,6 +1084,12 @@ class AppState:
             interval_seconds=self.config.runtime.ingestion_interval_seconds,
             action=self.retraining_candidate_job,
             enabled=scheduler_enabled,
+        )
+        self.scheduler.add_interval_job(
+            name="db_cleanup",
+            interval_seconds=self.config.runtime.db_cleanup_interval_hours * 3600,
+            action=self.db_cleanup_job,
+            enabled=scheduler_enabled and self.db is not None,
         )
         if scheduler_enabled and self._critical_startup_artifacts_available():
             self.scheduler.start()

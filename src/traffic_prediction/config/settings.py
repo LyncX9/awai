@@ -118,6 +118,13 @@ class RuntimeConfig:
     log_retention_days: int = 30
     scheduler_enabled: bool = False
     active_model_version: str | None = None
+    # Database retention — keeps Supabase free-plan storage (0.5 GB) under control.
+    # live_traffic_records: only last N hours are needed for LSTM inference (model
+    # uses at most 24 timesteps = 6 h at 15-min frequency).
+    # predictions: old prediction logs are only useful for short-term drift checks.
+    db_live_records_retention_hours: int = 12
+    db_predictions_retention_days: int = 3
+    db_cleanup_interval_hours: int = 6
 
 
 @dataclass(frozen=True)
@@ -464,6 +471,21 @@ def load_config(
                 dotenv,
             ),
             active_model_version=str(configured_model_version).strip() if configured_model_version else None,
+            db_live_records_retention_hours=_env_int(
+                "DB_LIVE_RECORDS_RETENTION_HOURS",
+                runtime.get("db_live_records_retention_hours", RuntimeConfig.db_live_records_retention_hours),
+                dotenv,
+            ),
+            db_predictions_retention_days=_env_int(
+                "DB_PREDICTIONS_RETENTION_DAYS",
+                runtime.get("db_predictions_retention_days", RuntimeConfig.db_predictions_retention_days),
+                dotenv,
+            ),
+            db_cleanup_interval_hours=_env_int(
+                "DB_CLEANUP_INTERVAL_HOURS",
+                runtime.get("db_cleanup_interval_hours", RuntimeConfig.db_cleanup_interval_hours),
+                dotenv,
+            ),
         ),
     )
 

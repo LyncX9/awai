@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import json
+import logging
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Generator
 from uuid import uuid4
 
@@ -14,6 +15,8 @@ from traffic_prediction.api.schemas import PredictionResponse
 from traffic_prediction.data.schemas import LiveTrafficRecord
 from traffic_prediction.models.registry import ModelRegistryEntry
 from traffic_prediction.persistence.sqlite import StoredPrediction
+
+logger = logging.getLogger(__name__)
 
 
 class PostgreSQLPersistence:
@@ -154,6 +157,88 @@ class PostgreSQLPersistence:
         with self._connect() as connection:
             with connection.cursor() as cursor:
                 cursor.execute("DELETE FROM live_traffic_records")
+
+    def prune_live_records(self, retain_hours: int = 12) -> int:
+        """Delete live traffic records older than ``retain_hours`` hours.
+
+        The LSTM model needs at most 24 timesteps (= 6 hours at 15-min intervals)
+        to make predictions.  Keeping 12 hours gives 2x safety margin while
+        drastically cutting row count and therefore database storage.
+
+        Returns the number of rows deleted.
+        """
+        self.initialize()
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=retain_hours)
+        cutoff_str = cutoff.isoformat()
+        with self._connect() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    DELETE FROM live_traffic_records
+                    WHERE timestamp_wib < %s
+                    """,
+                    (cutoff_str,),
+                )
+                deleted = cursor.rowcount
+        logger.info("pruned_live_records", extra={"deleted": deleted, "retain_hours": retain_hours})
+        return deleted
+
+    def prune_old_predictions(self, retain_days: int = 3) -> int:
+        """Delete prediction log rows older than ``retain_days`` days.
+
+        Prediction history older than a few days is not needed for real-time
+        operation.  Keeping 3 days of logs is sufficient for drift monitoring
+        while keeping the table small.
+
+        Returns the number of rows deleted.
+        """
+        self.initialize()
+        cutoff = datetime.now(timezone.utc) - timedelta(days=retain_days)
+        cutoff_str = cutoff.isoformat()
+        with self._connect() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    DELETE FROM predictions
+                    WHERE requested_at_wib < %s
+                    """,
+                    (cutoff_str,),
+                )
+                deleted = cursor.rowcount
+        logger.info("pruned_old_predictions", extra={"deleted": deleted, "retain_days": retain_days})
+        return deleted
+
+    def get_db_size_stats(self) -> dict[str, Any]:
+        """Return row counts and estimated table sizes for monitoring.
+
+        Uses ``pg_total_relation_size`` to estimate disk bytes per table.
+        Values are approximations; actual Supabase billing uses a slightly
+        different measurement.
+        """
+        self.initialize()
+        stats: dict[str, Any] = {}
+        tables = ("live_traffic_records", "predictions", "model_registry")
+        with self._connect() as connection:
+            with connection.cursor() as cursor:
+                for table in tables:
+                    cursor.execute(f"SELECT COUNT(*) FROM {table}")
+                    row_count = cursor.fetchone()[0]
+                    cursor.execute(
+                        "SELECT pg_total_relation_size(%s)",
+                        (table,),
+                    )
+                    size_bytes = cursor.fetchone()[0]
+                    stats[table] = {
+                        "row_count": row_count,
+                        "size_bytes": size_bytes,
+                        "size_mb": round(size_bytes / (1024 * 1024), 3),
+                    }
+        total_bytes = sum(t["size_bytes"] for t in stats.values())
+        stats["total"] = {
+            "size_bytes": total_bytes,
+            "size_mb": round(total_bytes / (1024 * 1024), 3),
+        }
+        return stats
 
     def insert_prediction(
         self,
