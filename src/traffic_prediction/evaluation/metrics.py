@@ -6,7 +6,6 @@ from typing import Iterable
 import numpy as np
 import pandas as pd
 
-from traffic_prediction.inference.congestion import classify_congestion
 
 
 @dataclass(frozen=True)
@@ -95,6 +94,17 @@ def horizon_metrics(
         int(horizon): calculate_regression_metrics(true[:, index, ...], pred[:, index, ...])
         for index, horizon in enumerate(horizons)
     }
+
+
+def classify_congestion(speed: float, free_flow_speed: float) -> str:
+    ratio = max(float(speed), 0.0) / max(float(free_flow_speed), 1e-8)
+    if ratio >= 0.75:
+        return "free_flow"
+    if ratio >= 0.50:
+        return "moderate"
+    if ratio > 0.30:
+        return "congested"
+    return "severe"
 
 
 def classify_peak_period(timestamp: pd.Timestamp) -> str:

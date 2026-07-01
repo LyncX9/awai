@@ -61,6 +61,8 @@ class RetrainingDatasetManifest:
 class RetrainingDatasetManager:
     """Builds balanced retraining candidate datasets from historical and live records."""
 
+    _BASE_COLUMNS = ["road_id", "current_speed", "confidence", "collected_at_wib", "source"]
+
     def __init__(self, config: RetrainingDatasetConfig | None = None) -> None:
         self.config = config or RetrainingDatasetConfig()
         self._validate_config()
@@ -191,6 +193,8 @@ class RetrainingDatasetManager:
         live = self._live_records_to_frame(live_records, historical)
         if live.empty:
             combined = historical.copy()
+        elif historical.empty:
+            combined = live.copy()
         else:
             combined = pd.concat([historical, live], ignore_index=True, sort=False)
         if combined.empty:
@@ -204,7 +208,7 @@ class RetrainingDatasetManager:
     def _load_historical(self, historical_csv: str | Path) -> pd.DataFrame:
         path = Path(historical_csv)
         if not path.exists():
-            raise FileNotFoundError(f"Historical CSV not found: {path}")
+            return pd.DataFrame(columns=self._BASE_COLUMNS)
         historical = pd.read_csv(path)
         required = {"road_id", "current_speed", "confidence", "collected_at_wib"}
         missing = sorted(required - set(historical.columns))
@@ -220,14 +224,17 @@ class RetrainingDatasetManager:
         if not records:
             return pd.DataFrame(columns=[*historical.columns])
 
-        profiles = (
-            historical.sort_values("collected_at_wib")
-            .drop_duplicates(subset=["road_id"], keep="last")
-            .set_index("road_id", drop=False)
-        )
+        if historical.empty or "road_id" not in historical.columns:
+            profiles = pd.DataFrame()
+        else:
+            profiles = (
+                historical.sort_values("collected_at_wib")
+                .drop_duplicates(subset=["road_id"], keep="last")
+                .set_index("road_id", drop=False)
+            )
         rows: list[dict[str, Any]] = []
         for record in records:
-            base = profiles.loc[record.road_id].to_dict() if record.road_id in profiles.index else {}
+            base = profiles.loc[record.road_id].to_dict() if not profiles.empty and record.road_id in profiles.index else {}
             base.update(
                 {
                     "road_id": record.road_id,
@@ -241,6 +248,8 @@ class RetrainingDatasetManager:
                 base["id"] = None
             rows.append(base)
         live = pd.DataFrame(rows)
+        if historical.empty:
+            return live.reindex(columns=pd.Index(self._BASE_COLUMNS).union(live.columns, sort=False))
         return live.reindex(columns=historical.columns.union(live.columns, sort=False))
 
     def _apply_retention(self, dataset: pd.DataFrame, now: datetime | None = None) -> pd.DataFrame:

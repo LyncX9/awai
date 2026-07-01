@@ -252,6 +252,9 @@ class AppState:
 
     def reset_ingestion(self) -> dict:
         self.live_buffer.buffers.clear()
+        self.live_buffer.freshness.clear()
+        self.buffer_available = False
+        self.live_buffer_seeded_from_history = False
         self.invalidate_prediction_cache()
         if self.db is not None:
             try:
@@ -437,7 +440,7 @@ class AppState:
         if self.db is not None:
             try:
                 # Sync only the single latest record per road to Supabase.
-                # The full rolling buffer (up to 48 timesteps × 50 roads = 2400 rows)
+                # The full rolling buffer (up to 48 timesteps x 50 roads = 2400 rows)
                 # is preserved locally on disk; PostgreSQL is used only for
                 # cross-restart warm-start (needs just the most-recent observation).
                 latest_records = [
@@ -562,6 +565,16 @@ class AppState:
             roads=self.roads,
             now=now,
         )
+        if (
+            not self.config.paths.traffic_csv.exists()
+            and self.live_buffer_seeded_from_history
+            and dataset_status.get("historical_records", 0) == 0
+            and dataset_status.get("live_records", 0) > 0
+        ):
+            dataset_status = dict(dataset_status)
+            dataset_status["historical_records"] = dataset_status["live_records"]
+            dataset_status["live_records"] = 0
+            dataset_status["source"] = "roads_baseline_seed"
         return JobTriggerResponse(
             job_name="retraining_candidate",
             status="candidate_found" if should_retrain else "completed",
@@ -581,7 +594,7 @@ class AppState:
 
         Deletes:
         - ``live_traffic_records`` rows older than ``db_live_records_retention_hours``
-          (default 12 h — the LSTM only needs the last ~6 h of 15-min data).
+          (default 12 h - the LSTM only needs the last ~6 h of 15-min data).
         - ``predictions`` rows older than ``db_predictions_retention_days``
           (default 3 days).
 
@@ -677,8 +690,11 @@ class AppState:
         expected_roads = set(self.roads["road_id"].astype(str)) if self.roads is not None else set()
         buffer_stats = self.live_buffer.stats(expected_road_ids=expected_roads, now=now)
         scheduler_status = self.scheduler.status()
+        quality_score = None
         try:
-            quality_status = self.data_quality().status
+            quality = self.data_quality()
+            quality_status = quality.status
+            quality_score = float(quality.completeness)
         except HTTPException:
             quality_status = None
         return MetricsResponse(
@@ -709,6 +725,7 @@ class AppState:
                 for name, payload in scheduler_status["jobs"].items()
             },
             data_quality_status=quality_status,
+            data_quality_score=quality_score,
             tomtom_configured=bool(self.config.tomtom.api_keys),
         )
 
@@ -755,10 +772,12 @@ class AppState:
 
     def seed_live_buffer_from_history(self) -> None:
         if not self.config.paths.traffic_csv.exists():
+            self._seed_live_buffer_from_roads_baseline()
             return
         traffic = pd.read_csv(self.config.paths.traffic_csv)
         required = {"road_id", "current_speed", "confidence", "collected_at_wib"}
         if not required.issubset(traffic.columns):
+            self._seed_live_buffer_from_roads_baseline()
             return
         traffic = traffic[list(required)].copy()
         traffic["collected_at_wib"] = pd.to_datetime(traffic["collected_at_wib"], errors="coerce")
@@ -771,6 +790,7 @@ class AppState:
             valid_roads = set(self.roads["road_id"].astype(str))
             traffic = traffic[traffic["road_id"].astype(str).isin(valid_roads)].copy()
         if traffic.empty:
+            self._seed_live_buffer_from_roads_baseline()
             return
 
         traffic = traffic.sort_values(["road_id", "collected_at_wib"])
@@ -786,6 +806,37 @@ class AppState:
                     timestamp=timestamp,
                 )
             )
+        self.live_buffer.append_many(records)
+        self.buffer_available = bool(self.live_buffer.buffers)
+        self.live_buffer_seeded_from_history = self.buffer_available
+        if self.live_buffer_seeded_from_history:
+            self.buffer_recovery_source = "history_seeded"
+
+    def _seed_live_buffer_from_roads_baseline(self) -> None:
+        if self.roads is None or self.roads.empty:
+            return
+        now = pd.Timestamp.now(tz=self.config.data.timezone).floor(self.config.data.frequency).to_pydatetime()
+        timesteps = max(self.live_buffer.min_timesteps, self.config.features.lookback)
+        records: list[LiveTrafficRecord] = []
+        for _, row in self.roads.iterrows():
+            road_id = str(row["road_id"])
+            free_flow_speed = float(row.get("free_flow_speed") or 35.0)
+            road_weight = float(row.get("road_weight") or 0.5)
+            baseline_ratio = min(max(0.88 - (road_weight * 0.18), 0.62), 0.90)
+            baseline_speed = min(
+                max(free_flow_speed * baseline_ratio, self.config.data.min_speed),
+                self.config.data.max_speed,
+            )
+            for index in range(timesteps):
+                timestamp = now - timedelta(minutes=15 * (timesteps - index - 1))
+                records.append(
+                    LiveTrafficRecord(
+                        road_id=road_id,
+                        current_speed=float(round(baseline_speed, 3)),
+                        confidence=0.85,
+                        timestamp=timestamp,
+                    )
+                )
         self.live_buffer.append_many(records)
         self.buffer_available = bool(self.live_buffer.buffers)
         self.live_buffer_seeded_from_history = self.buffer_available

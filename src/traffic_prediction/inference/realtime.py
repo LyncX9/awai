@@ -93,12 +93,6 @@ class RealtimePredictionPipeline:
             try:
                 horizon_values = np.asarray(self.model_runner.predict_kmh(feature_result.sequence), dtype=float).reshape(-1)
                 
-                # Apply autoregressive temporal smoothing based on current speed 
-                # to anchor model predictions realistically for the live demo
-                current_speed = self._current_speed_from_buffer(context.request.road_id)
-                if current_speed is not None and len(horizon_values) == 4:
-                    blend_factors = np.array([0.7, 0.45, 0.25, 0.1])
-                    horizon_values = (current_speed * blend_factors) + (horizon_values * (1.0 - blend_factors))
 
                 horizon_index = self._horizon_index(context.request.horizon_minutes)
                 if horizon_index >= len(horizon_values):
@@ -118,10 +112,30 @@ class RealtimePredictionPipeline:
                 feature_result=feature_result,
             )
 
-        # Fallback removed as per user request. Raise 503 instead.
-        from fastapi import HTTPException
-        raise HTTPException(status_code=503, detail=active_error or "Model inference unavailable or failed")
-
+        fallback = self.fallback_predictor.predict(
+            context.request.road_id,
+            context.target_time,
+            context.request.horizon_minutes,
+            latest_live_record=self._latest_live_record(context.request.road_id),
+            prefer_persistence=False,
+        )
+        if active_error is not None:
+            fallback = FallbackPrediction(
+                predicted_speed=fallback.predicted_speed,
+                method=fallback.method,
+                lookup_quality=fallback.lookup_quality,
+                uncertainty_margin=fallback.uncertainty_margin,
+                confidence_score=fallback.confidence_score,
+                degraded=True,
+                reason=active_error,
+            )
+        return self._format_fallback_response(
+            context=context,
+            fallback=fallback,
+            quality_report=quality_report,
+            feature_result=feature_result,
+            feature_error=active_error,
+        )
 
     def _format_live_response(
         self,

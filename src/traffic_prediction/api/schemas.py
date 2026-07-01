@@ -74,6 +74,7 @@ class MetricsResponse(BaseModel):
     scheduler_job_count: int = 0
     scheduler_jobs: dict[str, SchedulerJobStatusResponse] = Field(default_factory=dict)
     data_quality_status: str | None = None
+    data_quality_score: float | None = None
     tomtom_configured: bool = False
 
 
